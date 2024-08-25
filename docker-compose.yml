@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  react:
+    build: ./react
+    volumes:
+      - ./react/project:/var/www/vite-project
+    environment:
+      TZ: ${TZ}
+      GO_API_URL: ${GO_API_URL}
+    # ホストの3000番ポートに来たものをコンテナの3000番にフォワードする
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    # コンテナのネットワークないで3000番ポートを開く
+    expose:
+      - "3000"
+    # コンテナを起動したままにしたいので以下設定追加
+    # コンテナとホストの標準出力をつなぐ（コンテナの出力がホストに伝えられる）
+    tty: true
+    # コンテナとホストの標準入力をつなぐ（ホストマシンの入力がコンテナに伝えられる）
+    stdin_open: true
+    networks:
+      go_app_net:
+        ipv4_address: 192.168.111.101
+
+  go:
+    build: ./go
+    volumes:
+      - ./go:/usr/src/app
+    environment:
+      TZ: ${TZ}
+      EMAIL_ADDRESS: ${EMAIL_ADDRESS}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      APP_URL: ${APP_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET : ${JWT_REFRESH_SECRET}
+    # ホストの8080番ポートに来たものをコンテナの8080番にフォワードする
+    ports:
+      - "8080:8080"
+    # コンテナのネットワークないで8080番ポートを開く
+    expose:
+      - "8080"
+    # コンテナを起動したままにしたいので以下設定追加
+    # コンテナとホストの標準出力をつなぐ（コンテナの出力がホストに伝えられる）
+    tty: true
+    # コンテナとホストの標準入力をつなぐ（ホストマシンの入力がコンテナに伝えられる）
+    stdin_open: true
+    depends_on:
+      - mysql
+    networks:
+      go_app_net:
+        ipv4_address: 192.168.111.102
+
+  nginx:
+    build: ./nginx
+    volumes:
+      - ./nginx/:/etc/nginx/
+      - ./react/project/dist:/usr/share/nginx/html
+    environment:
+      TZ: ${TZ}
+    ports:
+      - "8000:8000"
+    # コンテナのネットワークないで8000番ポートを開く
+    expose:
+      - "8000"
+    # コンテナを起動したままにしたいので以下設定追加
+    # コンテナとホストの標準出力をつなぐ（コンテナの出力がホストに伝えられる）
+    tty: true
+    # コンテナとホストの標準入力をつなぐ（ホストマシンの入力がコンテナに伝えられる）
+    stdin_open: true
+    depends_on:
+      - react
+      - go
+    networks:
+      go_app_net:
+        ipv4_address: 192.168.111.103
+
+  mysql:
+    build: ./mysql
+    volumes:
+      - ./redis/data:/data
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ}
+    ports:
+      - "3306:3306"
+    # コンテナのネットワークないで3306番ポートを開く
+    expose:
+      - "3306"
+    # コンテナを起動したままにしたいので以下設定追加
+    # コンテナとホストの標準出力をつなぐ（コンテナの出力がホストに伝えられる）
+    tty: true
+    # コンテナとホストの標準入力をつなぐ（ホストマシンの入力がコンテナに伝えられる）
+    stdin_open: true
+    networks:
+      go_app_net:
+        ipv4_address: 192.168.111.104
+
+  redis:
+    build: ./redis
+    environment:
+      TZ: ${TZ}
+    ports:
+      - "6379:6379"
+    # コンテナのネットワークないで8000番ポートを開く
+    expose:
+      - "6379"
+    # コンテナを起動したままにしたいので以下設定追加
+    # コンテナとホストの標準出力をつなぐ（コンテナの出力がホストに伝えられる）
+    tty: true
+    # コンテナとホストの標準入力をつなぐ（ホストマシンの入力がコンテナに伝えられる）
+    stdin_open: true
+    networks:
+      go_app_net:
+        ipv4_address: 192.168.111.105
+
+networks:
+  go_app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.111.0/24
