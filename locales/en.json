@@ -28,7 +28,7 @@
     "password_reset_link_sent": "Password reset link sent to your email",
     "failed_to_save_token": "Failed to save token",
     "failed_to_update_password": "Failed to update password",
-    "password_reset_successful": "Password has been reset successfully",
+    "password_reset_success": "Password has been reset successfully",
     "failed_to_delete_token": "Failed to delete token",
     "email_already_registered": "This email address is already registered",
     "username_already_registered": "This username is already registered",

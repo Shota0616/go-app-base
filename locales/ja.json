@@ -30,7 +30,7 @@
     "password_reset_link_sent": "パスワードリセットリンクがメールで送信されました",
     "failed_to_save_token": "トークンの保存に失敗しました",
     "failed_to_update_password": "パスワードの更新に失敗しました",
-    "password_reset_successful": "パスワードが正常にリセットされました",
+    "password_reset_success": "パスワードが正常にリセットされました",
     "failed_to_delete_token": "トークンの削除に失敗しました",
     "email_already_registered": "このメールアドレスは既に登録されています",
     "username_already_registered": "このユーザー名は既に登録されています",

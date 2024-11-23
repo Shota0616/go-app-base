@@ -256,7 +256,7 @@ const Auth = ({ open, handleClose }) => {
             if (error.response && error.response.data && error.response.data.error) {
                 setMessage(error.response.data.error);
             } else {
-                setMessage(t('reset_password_failed'));
+                setMessage(t('password_reset_failed'));
             }
             setMessageType('error');
         }
