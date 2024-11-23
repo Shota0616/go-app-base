@@ -232,7 +232,7 @@ const Auth = ({ open, handleClose }) => {
             if (error.response && error.response.data && error.response.data.error) {
                 setMessage(error.response.data.error);
             } else {
-                setMessage(t('request_password_reset_failed'));
+                setMessage(t('password_reset_request_failed'));
             }
             setMessageType('error');
         }
