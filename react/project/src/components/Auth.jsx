@@ -1,16 +1,30 @@
-import React, { useState, useEffect } from 'react'; // Reactとフックをインポート
-import axios from 'axios'; // HTTPリクエスト用のaxiosをインポート
-import { useLocation, useNavigate } from 'react-router-dom'; // ルーティングに必要なフックをインポート
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Box, Button, TextField, Typography, Paper, IconButton, InputAdornment } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-// 認証状態に関するステートを管理するカスタムフック
+// 認証状態を管理するカスタムフック
 const useAuthState = () => {
-    const [username, setUsername] = useState(''); // ユーザー名のステート
-    const [password, setPassword] = useState(''); // パスワードのステート
-    const [email, setEmail] = useState(''); // メールアドレスのステート
-    const [message, setMessage] = useState(''); // メッセージのステート
-    const [pingResponse, setPingResponse] = useState(''); // Pingレスポンスのステート
-    const [errorMessage, setErrorMessage] = useState(''); // エラーメッセージのステート
+    // ユーザー名の状態を管理
+    const [username, setUsername] = useState('');
+    // パスワードの状態を管理
+    const [password, setPassword] = useState('');
+    // メールアドレスの状態を管理
+    const [email, setEmail] = useState('');
+    // メッセージの状態を管理（エラーメッセージや成功メッセージ）
+    const [message, setMessage] = useState('');
+    // メッセージの種類を管理（エラーか成功か）
+    const [messageType, setMessageType] = useState('');
+    // 認証コードの状態を管理
+    const [verificationCode, setVerificationCode] = useState('');
+    // 新しいパスワードの状態を管理
+    const [newPassword, setNewPassword] = useState('');
+    // トークンの状態を管理
+    const [token, setToken] = useState('');
 
+    // 状態とその更新関数を返す
     return {
         username,
         setUsername,
@@ -20,270 +34,538 @@ const useAuthState = () => {
         setEmail,
         message,
         setMessage,
-        pingResponse,
-        setPingResponse,
-        errorMessage,
-        setErrorMessage,
+        messageType,
+        setMessageType,
+        verificationCode,
+        setVerificationCode,
+        newPassword,
+        setNewPassword,
+        token,
+        setToken,
     };
 };
 
-// /auth/activateパスに基づいて処理を行うカスタムフック
-const useActivateEffect = (navigate, handleActivate) => {
-    const location = useLocation(); // 現在のURLのパスを取得
+
+const Auth = ({ open, handleClose }) => {
+    const { username, setUsername, password, setPassword, email, setEmail, message, setMessage, messageType, setMessageType, verificationCode, setVerificationCode, newPassword, setNewPassword, token, setToken } = useAuthState();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+    const [showPassword, setShowPassword] = useState(false);
+    const [emailError, setEmailError] = useState(false);
+    const [passwordError, setPasswordError] = useState(false);
+    const [usernameError, setUsernameError] = useState(false);
+    const [verificationCodeError, setVerificationCodeError] = useState(false);
+    const [newPasswordError, setNewPasswordError] = useState(false);
+
+    const handleClickShowPassword = () => setShowPassword(!showPassword);
+    const handleMouseDownPassword = (event) => event.preventDefault();
+
+    // ページ遷移時にメッセージをリセット
+    useEffect(() => {
+        // location.stateからmessageを取得し、setMessageで状態を更新。messageがない場合は空文字を設定。
+        setMessage(location.state?.message || '');
+        // location.stateからmessageTypeを取得し、setMessageTypeで状態を更新。messageTypeがない場合は空文字を設定。
+        setMessageType(location.state?.messageType || ''); // メッセージの種類をリセット
+    // location.pathnameまたはlocation.stateが変更されるたびにこのuseEffectが実行される。
+    }, [location.pathname, location.state]);
 
     useEffect(() => {
-        if (location.pathname === '/auth/activate') {
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get('token'); // URLからトークンを取得
-            const email = params.get('email'); // URLからメールアドレスを取得
+        // location.searchからクエリパラメータを取得し、URLSearchParamsオブジェクトを作成。
+        const params = new URLSearchParams(location.search);
+        // クエリパラメータから'token'を取得。
+        const token = params.get('token');
+        // tokenが存在する場合、setTokenで状態を更新。
+        if (token) {
+            setToken(token);
+        }
+    // location.searchが変更されるたびにこのuseEffectが実行される。
+    }, [location.search]);
 
-            if (token && email) {
-                handleActivate(token, email); // トークンとメールが存在する場合、アクティベーション処理を実行
+    // useEffect(() => {
+    //     // location.searchからクエリパラメータを取得し、URLSearchParamsオブジェクトを作成。
+    //     const params = new URLSearchParams(location.search);
+    //     // クエリパラメータから'email'を取得。
+    //     const emailParam = params.get('email');
+    //     // emailParamが存在する場合、setEmailで状態を更新。
+    //     if (emailParam) {
+    //         setEmail(emailParam);
+    //     }
+    // // location.searchが変更されるたびにこのuseEffectが実行される。
+    // }, [location.search]);
+
+    // ページ遷移時にエラーメッセージをリセット
+    useEffect(() => {
+        setEmailError(false);
+        setPasswordError(false);
+        setUsernameError(false);
+        setVerificationCodeError(false);
+        setNewPasswordError(false);
+    }, [location.pathname]);
+
+    //////////////////////////////////////////
+    ///////////// 各種処理の関数 ///////////////
+    //////////////////////////////////////////
+
+    // 新規登録の処理
+    const handleRegister = async (username, password, email, setMessage, setMessageType, navigate) => {
+        // ユーザー名、パスワード、メールアドレスのいずれかが空の場合、エラーメッセージを設定して処理を終了
+        if (!username || !password || !email) {
+            setUsernameError(!username);
+            setEmailError(!email);
+            setPasswordError(!password);
+            return;
+        }
+
+        // ユーザー名、パスワード、メールアドレスをサーバーに送信して新規登録
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/register`, {
+                username,
+                password,
+                email,
+            });
+            setMessage(response.data.message);
+            setMessageType('success'); // 成功メッセージの種類を設定
+            navigate('/auth/verify'); // 登録成功後にメールの検証画面にリダイレクト
+        } catch (error) {
+            // エラーレスポンスの処理
+            if (error.response && error.response.data && error.response.data.error) {
+                setMessage(error.response.data.error);
             } else {
-                handleInvalidActivationLink(navigate); // トークンやメールがない場合、無効なリンク処理を実行
+                setMessage(t('registration_failed'));
             }
+            setMessageType('error'); // エラーメッセージの種類を設定
         }
-    }, [location, navigate, handleActivate]); // locationが変わるたびに実行
-};
+    };
 
-// 無効なアクティベーションリンクの場合の処理
-const handleInvalidActivationLink = (navigate) => {
-    setTimeout(() => {
-        navigate('/'); // 2秒後にホームページにリダイレクト
-    }, 2000);
-};
+    // ログインの処理
+    const handleLogin = async (email, password, setMessage, setMessageType, navigate) => {
+        // メールアドレス、パスワードのいずれかが空の場合、エラーメッセージを設定して処理を終了
+        if (!email || !password) {
+            setEmailError(!email);
+            setPasswordError(!password);
+            return;
+        }
 
-// ユーザー登録の処理
-const handleRegister = async (username, password, email, setMessage) => {
-    try {
-        const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/register`, {
-            username,
-            password,
-            email,
-        });
-        setMessage(response.data.message); // 成功メッセージを設定
-    } catch (error) {
-        handleError(error, setMessage); // エラーが発生した場合はエラーハンドリング
-    }
-};
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/login`, {
+                email,
+                password,
+            });
 
-// アクティベーションの処理
-const handleActivate = async (token, email, setMessage, navigate) => {
-    try {
-        const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/activate`, {
-            token,
-            email,
-        });
-        setMessage(response.data.message); // 成功メッセージを設定
-        handleInvalidActivationLink(navigate); // 無効なリンク処理を実行
-    } catch (error) {
-        handleError(error, setMessage); // エラーが発生した場合はエラーハンドリング
-        handleInvalidActivationLink(navigate); // 無効なリンク処理を実行
-    }
-};
+            localStorage.setItem('token', response.data.token); // アクセストークンをlocalStorageに保存
+            localStorage.setItem('refrestoken', response.data.refreshtoken); // リフレッシュトークンも保存
+            window.dispatchEvent(new Event("storage")); // storageイベントを発火
+            setMessage(t('login_successful')); // 成功メッセージを設定
+            setMessageType('success'); // 成功メッセージの種類を設定
 
-// ログインの処理
-const handleLogin = async (email, password, setMessage) => {
-    try {
-        // 既存のトークンがlocalStorageに存在する場合、そのトークンの有効性を確認
-        const existingToken = localStorage.getItem('token');
-        if (existingToken) {
-            const isTokenValid = await validateToken(existingToken);
-            if (!isTokenValid) {
-                localStorage.removeItem('token'); // 無効なトークンを削除
-                window.dispatchEvent(new Event("storage")); // storageイベントを発火
+        } catch (error) {
+            // エラーレスポンスの処理
+
+            if (error.response.status === 303) {
+                navigate("/auth/verify", { state: { message: error.response.data.error, messageType: 'error' } });
+            } else {
+                setMessage(t('login_failed'));
             }
+            setMessageType('error'); // エラーメッセージの種類を設定
         }
-        // emailとpasswordでログインし、トークンとリフレッシュトークンを取得
-        const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/login`, {
-            email,
-            password,
-        });
-        localStorage.setItem('token', response.data.token); // アクセストークンをlocalStorageに保存
-        localStorage.setItem('refrestoken', response.data.refreshtoken); // リフレッシュトークンも保存
-        window.dispatchEvent(new Event("storage")); // storageイベントを発火
-        setMessage('Login successful!'); // 成功メッセージを設定
-    } catch (error) {
-        handleError(error, setMessage); // エラーが発生した場合はエラーハンドリング
-    }
-};
+    };
 
-// Ping APIからデータを取得する処理
-const fetchPing = async (setPingResponse, setErrorMessage) => {
-    try {
-        const response = await axios.get(`${import.meta.env.VITE_APP_API_URL}/api/ping`);
-        setPingResponse(response.data); // Pingレスポンスを設定
-    } catch (error) {
-        setErrorMessage('Error fetching ping response'); // エラーメッセージを設定
-    }
-};
+    // 認証コードの処理
+    const handleVerify = async (email, verificationCode, setMessage, setMessageType, navigate) => {
+        // 認証コードが空の場合、エラーメッセージを設定して処理を終了
+        if (!verificationCode) {
+            setVerificationCodeError(!verificationCode);
+            return;
+        }
 
-// エラーハンドリングの処理
-const handleError = (error, setMessage) => {
-    if (error.response && error.response.data) {
-        setMessage(error.response.data.error); // サーバーからのエラーメッセージを設定
-    } else {
-        setMessage("An unexpected error occurred."); // 一般的なエラーメッセージを設定
-    }
-};
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/verify`, {
+                email,
+                verificationCode,
+            });
+            setMessage(response.data.message);
+            setMessageType('success'); // 成功メッセージの種類を設定
+            navigate('/auth/login'); // 認証成功後にログイン画面にリダイレクト
+        } catch (error) {
+            if (error.response && error.response.data && error.response.data.error) {
+                setMessage(error.response.data.error);
+            } else {
+                setMessage(t('verification_failed'));
+            }
+            setMessageType('error'); // エラーメッセージの種類を設定
+        }
+    };
 
-// 登録画面のコンテンツをレンダリング
-const renderRegister = (username, setUsername, password, setPassword, email, setEmail, handleRegister, setMessage) => (
-    <>
-        <h2>Register</h2>
-        <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)} // ユーザー名の変更
-        />
-        <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)} // メールアドレスの変更
-        />
-        <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)} // パスワードの変更
-        />
-        <button onClick={() => handleRegister(username, password, email, setMessage)}>Register</button> {/* 登録処理の実行 */}
-    </>
-);
+    // 認証コードの再送信の処理
+    const handleResendVerificationCode = async (email, setMessage, setMessageType) => {
+        // メールアドレスが空の場合、エラーメッセージを設定して処理を終了
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/resend-verification-code`, {
+                email,
+            });
+            setMessage(response.data.message);
+            setMessageType('success'); // 成功メッセージの種類を設定
+        } catch (error) {
+            if (error.response && error.response.data && error.response.data.error) {
+                setMessage(error.response.data.error);
+            }else {
+                setMessage(t('resend_verification_code_failed'));
+            }
+            setMessageType('error');
+        }
+    };
 
-// ログイン画面のコンテンツをレンダリング
-const renderLogin = (email, setEmail, password, setPassword, handleLogin, setMessage) => (
-    <>
-        <h2>Login</h2>
-        <input
-            type="text"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)} // メールアドレスの変更
-        />
-        <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)} // パスワードの変更
-        />
-        <button onClick={() => handleLogin(email, password, setMessage)}>Login</button> {/* ログイン処理の実行 */}
-    </>
-);
+    const handleRequestPasswordReset = async (email, setMessage, setMessageType) => {
+        // メールアドレスが空の場合、エラーメッセージを設定して処理を終了
+        if (!email) {
+            setEmailError(!email);
+            return;
+        }
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/request-password-reset`, {
+                email,
+            });
+            setMessage(response.data.message);
+            setMessageType('success');
+        } catch (error) {
+            if (error.response && error.response.data && error.response.data.error) {
+                setMessage(error.response.data.error);
+            } else {
+                setMessage(t('request_password_reset_failed'));
+            }
+            setMessageType('error');
+        }
+    };
 
-// Pingテスト画面のコンテンツをレンダリング
-const renderPing = (fetchPing, pingResponse, errorMessage, setPingResponse, setErrorMessage) => (
-    <>
-        <h2>Ping</h2>
-        <button onClick={() => fetchPing(setPingResponse, setErrorMessage)}>Ping</button> {/* Pingテスト実行 */}
-        {errorMessage ? (
-            <p style={{ color: 'red' }}>{errorMessage}</p> // エラーメッセージ表示
-        ) : (
-            pingResponse && <p>Message: {pingResponse.message}</p> // Pingレスポンス表示
-        )}
-    </>
-);
-
-// // リフレッシュトークンを使って新しいアクセストークンを取得する関数
-// const refreshToken = async () => {
-//     try {
-//         // localStorageからリフレッシュトークンを取得
-//         const refreshToken = localStorage.getItem('refreshToken');
-//         if (!refreshToken) {
-//             throw new Error('No refresh token found'); // リフレッシュトークンがない場合はエラー
-//         }
-//         // リフレッシュトークンを使って新しいアクセストークンを取得するAPIエンドポイントにリクエスト
-//         const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/refresh`, {
-//             refreshToken,
-//         });
-//         // 取得した新しいアクセストークンとリフレッシュトークンをlocalStorageに保存
-//         localStorage.setItem('token', response.data.token);
-//         localStorage.setItem('refreshToken', response.data.refreshToken);
-//         window.dispatchEvent(new Event("storage")); // storageイベントを発火して、他のタブに通知
-//         return response.data.token; // 新しいアクセストークンを返す
-//     } catch (error) {
-//         console.error('Failed to refresh token', error);
-//         // リフレッシュトークンが無効な場合、トークンを削除
-//         localStorage.removeItem('token');
-//         localStorage.removeItem('refreshToken');
-//         window.dispatchEvent(new Event("storage")); // storageイベントを発火して、他のタブに通知
-//         throw error; // エラーを再スローして処理を停止
-//     }
-// };
-
-// // Axiosのリクエストインターセプター
-// axios.interceptors.request.use(async (config) => {
-//     // localStorageからアクセストークンを取得
-//     let token = localStorage.getItem('token');
-//     if (token) {
-//         try {
-//             // トークンの有効性を確認
-//             const isTokenValid = await validateToken(token);
-//             if (!isTokenValid) {
-//                 // トークンが無効な場合、リフレッシュトークンを使って新しいアクセストークンを取得
-//                 token = await refreshToken();
-//             }
-//         } catch (error) {
-//             console.error('Token refresh failed', error);
-//         }
-//     }
-//     // 有効なアクセストークンがあれば、リクエストヘッダーに設定
-//     if (token) {
-//         config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     return config; // リクエスト設定を返す
-// }, (error) => {
-//     return Promise.reject(error); // リクエストエラーをそのまま返す
-// });
+    const handleResetPassword = async (token, newPassword, setMessage, setMessageType, navigate) => {
+        // 新しいパスワードが空の場合、エラーメッセージを設定して処理を終了
+        if (!newPassword) {
+            setNewPasswordError(!newPassword);
+            return;
+        }
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/reset-password`, {
+                token,
+                newPassword,
+            });
+            setMessage(response.data.message);
+            setMessageType('success');
+            navigate('/auth/login');
+        } catch (error) {
+            if (error.response && error.response.data && error.response.data.error) {
+                setMessage(error.response.data.error);
+            } else {
+                setMessage(t('reset_password_failed'));
+            }
+            setMessageType('error');
+        }
+    };
 
 
-// メインのAuthコンポーネント
-const Auth = () => {
-    const location = useLocation(); // 現在のURLのパスを取得
-    const navigate = useNavigate(); // ページ遷移を行うためのnavigateフックを取得
-    const {
-        username,
-        setUsername,
-        password,
-        setPassword,
-        email,
-        setEmail,
-        message,
-        setMessage,
-        pingResponse,
-        setPingResponse,
-        errorMessage,
-        setErrorMessage,
-    } = useAuthState(); // 認証状態に関するステートを取得
 
-    // useActivateEffectを使用して、/auth/activateパスに基づくアクティベーション処理を実行
-    useActivateEffect(navigate, (token, email) => handleActivate(token, email, setMessage, navigate));
+    //////////////////////////////////////////
+    ///////////// 各種render処理 ///////////////
+    //////////////////////////////////////////
 
-    // 現在のパスに基づいて適切なコンテンツをレンダリング
+
+
+    const renderRegister = () => {
+        return (
+            // <Box component="form" onSubmit={(e) => { e.preventDefault(); handleRegister(username, password, email, setMessage, setMessageType, navigate) }} sx={{ mt: 2 }}>
+            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleRegister(username, password, email, setMessage, setMessageType, navigate) }} sx={{ mt: 2 }}>
+
+                <TextField
+                    label={t('username')}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    error={usernameError}
+                    helperText={usernameError ? `${t('username')}${t('input_required')}` : ''}
+                    InputProps={{
+                        style: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                        },
+                    }}
+                    InputLabelProps={{
+                        style: { color: 'white' },
+                    }}
+                />
+                <TextField
+                    label={t('email')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    error={emailError}
+                    helperText={emailError ? `${t('email')}${t('input_required')}` : ''}
+                    InputProps={{
+                        style: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                        },
+                    }}
+                    InputLabelProps={{
+                        style: { color: 'white' },
+                    }}
+                />
+                <TextField
+                    label={t('password')}
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    error={passwordError}
+                    helperText={passwordError ? `${t('password')}${t('input_required')}` : ''}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    aria-label="toggle password visibility"
+                                    onClick={handleClickShowPassword}
+                                    onMouseDown={handleMouseDownPassword}
+                                    edge="end"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                        style: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                        },                    }}
+                    InputLabelProps={{
+                        style: { color: 'white' },
+                    }}
+                />
+                <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
+                    {t('register')}
+                </Button>
+            </Box>
+        );
+    };
+
+    const renderLogin = () => {
+        return (
+            <Box component="form" onSubmit={(e) => {e.preventDefault(); handleLogin(email, password, setMessage, setMessageType, navigate)} } sx={{ mt: 2 }}>
+                <TextField
+                    label={t('email')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    error={emailError}
+                    helperText={emailError ? `${t('email')}${t('input_required')}` : ''}
+                    InputProps={{
+                        style: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                        },
+                    }}
+                    InputLabelProps={{
+                        style: { color: 'white' },
+                    }}
+                />
+                <TextField
+                    label={t('password')}
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    error={passwordError}
+                    helperText={passwordError ? `${t('password')}${t('input_required')}` : ''}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    aria-label="toggle password visibility"
+                                    onClick={handleClickShowPassword}
+                                    onMouseDown={handleMouseDownPassword}
+                                    edge="end"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                        style: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                        },
+                    }}
+                    InputLabelProps={{
+                        style: { color: 'white' },
+                    }}
+                />
+                <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
+                    {t('login')}
+                </Button>
+                <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+                    <Link to="/auth/request-password-reset" style={{ color: '#1976d2', textDecoration: 'none' }}>
+                        {t('forgot_password')}
+                    </Link>
+                </Typography>
+            </Box>
+        );
+    };
+
+    const renderVerify = () => {
+        return (
+            <Box component="form" onSubmit={(e) => {e.preventDefault(); handleVerify(email, verificationCode, setMessage, setMessageType, navigate)}} sx={{ mt: 2 }}>
+                <TextField
+                    label={t('verification_code')}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    error={verificationCodeError}
+                    helperText={verificationCodeError ? `${t('verification_code')}${t('input_required')}` : ''}
+                    InputProps={{
+                        style: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                        },
+                    }}
+                    InputLabelProps={{
+                        style: { color: 'white' },
+                    }}
+                />
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                    {t('enter_verification_code')}
+                </Typography>
+                <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
+                    {t('verify')}
+                </Button>
+                {/* 認証コードの再送信ボタン */}
+                <Button onClick={() => handleResendVerificationCode(email, setMessage, setMessageType)} variant="contained" color="secondary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
+                    {t('resend_verification_code')}
+                </Button>
+            </Box>
+        );
+    };
+
+    const renderRequestPasswordReset = () => {
+        return (
+            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleRequestPasswordReset(email, setMessage, setMessageType); }} sx={{ mt: 2 }}>
+            <TextField
+                label={t('email')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                fullWidth
+                margin="normal"
+                error={emailError}
+                helperText={emailError ? `${t('email')}${t('input_required')}` : ''}
+                InputProps={{
+                style: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    color: 'white',
+                },
+                }}
+                InputLabelProps={{
+                    style: { color: 'white' },
+                }}
+            />
+            <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
+                {t('send')}
+            </Button>
+            </Box>
+        );
+    };
+
+    const renderResetPassword = () => {
+        return (
+            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleResetPassword(token, newPassword, setMessage, setMessageType, navigate); }} sx={{ mt: 2 }}>
+            <TextField
+                label={t('new_password')}
+                type={showPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                fullWidth
+                margin="normal"
+                error={newPasswordError}
+                helperText={newPasswordError ? `${t('new_password')}${t('input_required')}` : ''}
+                InputProps={{
+                endAdornment: (
+                    <InputAdornment position="end">
+                    <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        onMouseDown={handleMouseDownPassword}
+                        edge="end"
+                    >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                    </InputAdornment>
+                ),
+                style: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    color: 'white',
+                },
+                }}
+                InputLabelProps={{
+                style: { color: 'white' },
+                }}
+            />
+            <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
+                {t('reset_password')}
+            </Button>
+            </Box>
+        );
+    };
+
     const renderContent = () => {
         switch (location.pathname) {
             case '/auth/register':
-                return renderRegister(username, setUsername, password, setPassword, email, setEmail, handleRegister, setMessage);
+                return renderRegister();
             case '/auth/login':
-                return renderLogin(email, setEmail, password, setPassword, handleLogin, setMessage);
-            case '/auth/ping':
-                console.log("/auth/ping : case")
-                return renderPing(fetchPing, pingResponse, errorMessage, setPingResponse, setErrorMessage);
-            case '/auth/activate':
-                return <h2>Activating your account...</h2>;
+                return renderLogin();
+            case '/auth/verify':
+                return renderVerify();
+            case '/auth/request-password-reset':
+                return renderRequestPasswordReset();
+            case '/auth/reset-password':
+                return renderResetPassword();
             default:
-                return <h2>Page not found</h2>;
+                return <Typography>Page not found</Typography>;
+        }
+    };
+
+    const getTitle = () => {
+        switch (location.pathname) {
+            case '/auth/register':
+                return t('register');
+            case '/auth/login':
+                return t('login');
+            case '/auth/verify':
+                return t('enter_verification_code');
+            case '/auth/request-password-reset':
+                return t('send_password_reset_email');
+            case '/auth/reset-password':
+                return t('reset_password');
+            default:
+                return '';
         }
     };
 
     return (
-        <div>
-            {renderContent()} {/* 現在のパスに基づいたコンテンツをレンダリング */}
-            {message && <p>{message}</p>} {/* メッセージがある場合、表示 */}
-        </div>
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 400, mx: 'auto', mt: 4, bgcolor: 'grey.800', color: 'white', borderRadius: 5, boxShadow: 10 }}>
+            <Typography variant="h5" component="h1" gutterBottom>
+                {getTitle()}
+            </Typography>
+            {renderContent()}
+            {message && (
+                <Typography
+                    color={messageType === 'error' ? 'error' : 'success'}
+                    sx={{ mt: 2 }}
+                >
+                    {message}
+                </Typography>
+            )}
+        </Paper>
     );
 };
 
-export default Auth; // Authコンポーネントをエクスポート
+export default Auth;

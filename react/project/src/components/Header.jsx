@@ -23,7 +23,7 @@ import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
 import SearchIcon from '@mui/icons-material/Search';
 import LoginIcon from '@mui/icons-material/Login';
-
+import { useTranslation } from 'react-i18next';
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -66,6 +66,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 // ユーザのボタンを押下したときのモーダル
 function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして受け取る
+    const { t } = useTranslation();
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
 
@@ -81,7 +82,7 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
         <React.Fragment>
             <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
                 {/* <Typography sx={{ minWidth: 100 }}>Profile</Typography> */}
-                <Tooltip title="Account settings">
+                <Tooltip title={t('account_settings')}>
                     <IconButton
                         onClick={handleClick}
                         size="large"
@@ -134,7 +135,7 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
                     [
                         <Link to="/mypage" key="mypage" style={{ textDecoration: 'none', color: 'inherit' }}>
                             <MenuItem onClick={handleClose}>
-                                <Avatar /> Profile
+                                <Avatar /> {t('mypage')}
                             </MenuItem>
                         </Link>,
                         <Divider key="divider" />,
@@ -143,7 +144,7 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
                                 <ListItemIcon>
                                     <Settings fontSize="small" />
                                 </ListItemIcon>
-                                Settings
+                                {t('settings')}
                             </MenuItem>
                         </Link>,
                         <Link to="/logout" key="logout-option" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -151,20 +152,19 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
                                 <ListItemIcon>
                                     <Logout fontSize="small" />
                                 </ListItemIcon>
-                                Logout
+                                {t('logout')}
                             </MenuItem>
                         </Link>
                     ]
                                     ) : (
                     // ログインされていない時の処理
                     [
-                        <Divider key="divider" />,
                         <Link to="/auth/register" key="register" style={{ textDecoration: 'none', color: 'inherit' }}>
                             <MenuItem onClick={handleClose}>
                                 <ListItemIcon>
                                     <PersonAdd fontSize="small" />
                                 </ListItemIcon>
-                                Add another account
+                                {t('register')}
                             </MenuItem>
                         </Link>,
                         <Link to="/auth/login" key="login" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -172,7 +172,7 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
                                 <ListItemIcon>
                                     <LoginIcon fontSize="small" />
                                 </ListItemIcon>
-                                Login
+                                {t('login')}
                             </MenuItem>
                         </Link>,
                         <Link to="/settings" key="settings" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -180,7 +180,7 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
                                 <ListItemIcon>
                                     <Settings fontSize="small" />
                                 </ListItemIcon>
-                                Settings
+                                {t('settings')}
                             </MenuItem>
                         </Link>,
                     ]
@@ -192,7 +192,8 @@ function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして�
 
 export default function PrimarySearchAppBar() {
 
-    // ログイン状態の有無を判断するためにlocalstorageにtokenが存在するか見る
+    // ログイン状態の有無を判断するためにlocalstorageにtokenが存在��るか見る
+    const { t } = useTranslation(); // 追加
     const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
     console.log('isLoggedIn:', isLoggedIn);
 
@@ -200,7 +201,6 @@ export default function PrimarySearchAppBar() {
         // storageイベントリスナーの設定
         const handleStorageChange = () => {
             setIsLoggedIn(Boolean(localStorage.getItem('token')));
-            console.log('isLoggedIn changed:', isLoggedIn);
         };
 
         // イベントリスナーを追加
@@ -226,27 +226,22 @@ export default function PrimarySearchAppBar() {
                             <SearchIcon />
                         </SearchIconWrapper>
                         <StyledInputBase
-                            placeholder="Search…"
+                            placeholder={t('search')}
                             inputProps={{ 'aria-label': 'search' }}
                         />
                     </Search>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-                        <IconButton size="large" aria-label="show 4 new mails" color="inherit">
-                            <Badge badgeContent={4} color="error">
-                                <MailIcon />
-                            </Badge>
-                        </IconButton>
+                    <Box sx={{ display: { xs: 'flex', md: 'flex' } }}>
                         <IconButton
                             size="large"
-                            aria-label="show 17 new notifications"
+                            aria-label={t('show_new_notifications')}
                             color="inherit"
                         >
                             <Badge badgeContent={17} color="error">
                                 <NotificationsIcon />
                             </Badge>
                         </IconButton>
-                        <AccountMenu isLoggedIn={isLoggedIn}/> {/* isLoggedInの状態を子コンポーネントに渡す */}
+                        <AccountMenu isLoggedIn={isLoggedIn}/>
                     </Box>
                 </Toolbar>
             </AppBar>

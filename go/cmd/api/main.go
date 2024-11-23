@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	config.InitI18n()
 	config.ConnectDatabase()
 	config.MigrateDatabase()
 	config.ConnectRedis()

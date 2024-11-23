@@ -2,9 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next'; // 追加
 
 // マイページ
 const MyPage = () => {
+    const { t } = useTranslation(); // 追加
     // apiを通じて取得したユーザ情報を格納
     const [user, setUser] = useState(null);
     // ページ遷移の関数をnavigateとする
@@ -45,16 +47,16 @@ const MyPage = () => {
 
     return (
         <div>
-            <h2>My Page</h2>
+            <h2>{t('mypage_title')}</h2>
             {user ? (
                 // userが存在するときユーザ情報を表示
                 <div>
-                    <p>Username: {user.username}</p>
-                    <p>Email: {user.email}</p>
+                    <p>{t('username')}: {user.username}</p>
+                    <p>{t('email')}: {user.email}</p>
                 </div>
             ) : (
                 // ユーザ情報が取得できていないときはloadingを表示
-                <p>Loading...</p>
+                <p>{t('loading')}</p>
             )}
         </div>
     );

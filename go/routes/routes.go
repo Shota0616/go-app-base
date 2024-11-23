@@ -6,6 +6,7 @@ import (
 	"github.com/Shota0616/go-sns/cmd/api/controllers"
 	"github.com/Shota0616/go-sns/middleware" // ミドルウェアのパッケージ
 	"github.com/gin-contrib/cors"
+	"os"
 )
 
 func SetupRouter() *gin.Engine {
@@ -13,7 +14,7 @@ func SetupRouter() *gin.Engine {
 
 	// CORS設定
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // ReactアプリケーションのURLを指定
+		AllowOrigins:     []string{os.Getenv("APP_URL"),"http://localhost:5173"}, // .envファイルに設定したAPP_URLを使用
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -25,11 +26,13 @@ func SetupRouter() *gin.Engine {
 	public := router.Group("/api")
 	{
 		public.POST("/register", controllers.Register)
-		public.POST("/activate", controllers.Activate)
+		public.POST("/verify", controllers.Verify)
 		public.POST("/login", controllers.Login)
+		public.POST("/request-password-reset", controllers.RequestPasswordReset) // パスワード再設定リクエストのエンドポイントを追加
+		public.POST("/resend-verification-code", controllers.ResendVerificationCode) // メール認証コード再送のエンドポイントを追加
+		public.POST("/reset-password", controllers.ResetPassword) // パスワード再設定のエンドポイントを追加
 		// サーバ側でトークンを管理するときは以下を追加
 		// public.POST("/logout", controllers.Logout)
-		public.GET("/ping", controllers.Ping)
 	}
 
 	// 認証が必要なルート
