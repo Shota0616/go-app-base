@@ -13,6 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import MailIcon from '@mui/icons-material/Mail';
+import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import Tooltip from '@mui/material/Tooltip';
 import PersonAdd from '@mui/icons-material/PersonAdd';
@@ -21,9 +22,14 @@ import Logout from '@mui/icons-material/Logout';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
-import SearchIcon from '@mui/icons-material/Search';
-import LoginIcon from '@mui/icons-material/Login';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
+import { useUser } from '/src/context/UserContext';
+
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -64,151 +70,83 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     },
 }));
 
-// ユーザのボタンを押下したときのモーダル
-function AccountMenu({ isLoggedIn }) { // isLoggedInをプロパティとして受け取る
+function AccountMenu({ isLoggedIn }) {
     const { t } = useTranslation();
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const { user } = useUser();
 
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
+    const toggleDrawer = (open) => (event) => {
+        if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+            return;
+        }
+        setDrawerOpen(open);
     };
 
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+    const menuItems = isLoggedIn ? [
+        { text: t('mypage'), link: '/mypage', icon: <AccountCircle /> },
+        { text: t('settings'), link: '/settings', icon: <Settings /> },
+        { divider: true },
+        { text: t('logout'), link: '/logout', icon: <Logout /> },
+    ] : [
+        { text: t('register'), link: '/auth/register', icon: <PersonAdd /> },
+        { text: t('login'), link: '/auth/login', icon: <AccountCircle /> },
+    ];
 
     return (
-        <React.Fragment>
-            <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
-                {/* <Typography sx={{ minWidth: 100 }}>Profile</Typography> */}
-                <Tooltip title={t('account_settings')}>
-                    <IconButton
-                        onClick={handleClick}
-                        size="large"
-                        aria-controls={open ? 'account-menu' : undefined}
-                        aria-haspopup="true"
-                        aria-expanded={open ? 'true' : undefined}
-                        color="inherit"
-                    >
-                        <AccountCircle />
-                    </IconButton>
-                </Tooltip>
-            </Box>
-            <Menu
-                anchorEl={anchorEl}
-                id="account-menu"
-                open={open}
-                onClose={handleClose}
-                onClick={handleClose}
-                PaperProps={{
-                    elevation: 0,
-                    sx: {
-                        overflow: 'visible',
-                        filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                        mt: 1.5,
-                        '& .MuiAvatar-root': {
-                            width: 32,
-                            height: 32,
-                            ml: -0.5,
-                            mr: 1,
-                        },
-                        '&::before': {
-                            content: '""',
-                            display: 'block',
-                            position: 'absolute',
-                            top: 0,
-                            right: 14,
-                            width: 10,
-                            height: 10,
-                            bgcolor: 'background.paper',
-                            transform: 'translateY(-50%) rotate(45deg)',
-                            zIndex: 0,
-                        },
-                    },
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-                {isLoggedIn ? (
-                    // ログインされている時の処理
-                    [
-                        <Link to="/mypage" key="mypage" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <MenuItem onClick={handleClose}>
-                                <Avatar /> {t('mypage')}
-                            </MenuItem>
-                        </Link>,
-                        <Divider key="divider" />,
-                        <Link to="/settings" key="settings" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <MenuItem onClick={handleClose}>
-                                <ListItemIcon>
-                                    <Settings fontSize="small" />
-                                </ListItemIcon>
-                                {t('settings')}
-                            </MenuItem>
-                        </Link>,
-                        <Link to="/logout" key="logout-option" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <MenuItem onClick={handleClose}>
-                                <ListItemIcon>
-                                    <Logout fontSize="small" />
-                                </ListItemIcon>
-                                {t('logout')}
-                            </MenuItem>
-                        </Link>
-                    ]
-                                    ) : (
-                    // ログインされていない時の処理
-                    [
-                        <Link to="/auth/register" key="register" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <MenuItem onClick={handleClose}>
-                                <ListItemIcon>
-                                    <PersonAdd fontSize="small" />
-                                </ListItemIcon>
-                                {t('register')}
-                            </MenuItem>
-                        </Link>,
-                        <Link to="/auth/login" key="login" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <MenuItem onClick={handleClose}>
-                                <ListItemIcon>
-                                    <LoginIcon fontSize="small" />
-                                </ListItemIcon>
-                                {t('login')}
-                            </MenuItem>
-                        </Link>,
-                        <Link to="/settings" key="settings" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <MenuItem onClick={handleClose}>
-                                <ListItemIcon>
-                                    <Settings fontSize="small" />
-                                </ListItemIcon>
-                                {t('settings')}
-                            </MenuItem>
-                        </Link>,
-                    ]
-                )}
-            </Menu>
-        </React.Fragment>
+        <>
+            <Tooltip title={t('account_settings')}>
+                <IconButton
+                    onClick={toggleDrawer(true)}
+                    size="large"
+                    color="inherit"
+                >
+                    <AccountCircle />
+                </IconButton>
+            </Tooltip>
+            <Drawer anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
+                <Box
+                    sx={{ width: 250, display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#242424', color: 'whitesmoke' }}
+                    role="presentation"
+                >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mx: 2, my: 1 }}>
+                        {isLoggedIn && (
+                            <Typography variant="body1" sx={{ color: 'white' }}>
+                                hi! {user?.username}
+                            </Typography>
+                        )}
+                        <IconButton onClick={toggleDrawer(false)}>
+                            <CloseIcon sx={{color: 'gray'}}/>
+                        </IconButton>
+                    </Box>
+                    <Divider sx={{ bgcolor: '#666666', mx: 2 }}/>
+                    <List>
+                        {menuItems.map((item, index) => (
+                            item.divider ? ( <Divider key={index} sx={{ bgcolor: '#666666', mx: 2, my: 1 }}/> ) : (
+                            <ListItem button component={Link} to={item.link} key={index} dense sx={{ py: 0.25 }} onClick={toggleDrawer(false)}>
+                                <ListItemIcon sx={{ color: '#999999', minWidth: 36 }} fontSize="small">{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} />
+                            </ListItem>
+                            )
+                        ))}
+                    </List>
+                </Box>
+            </Drawer>
+        </>
     );
 }
 
 export default function PrimarySearchAppBar() {
-
-    // ログイン状態の有無を判断するためにlocalstorageにtokenが存在��るか見る
-    const { t } = useTranslation(); // 追加
+    const { t } = useTranslation();
     const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
-    console.log('isLoggedIn:', isLoggedIn);
 
     useEffect(() => {
-        // storageイベントリスナーの設定
         const handleStorageChange = () => {
             setIsLoggedIn(Boolean(localStorage.getItem('token')));
         };
 
-        // イベントリスナーを追加
         window.addEventListener('storage', handleStorageChange);
-        // storageイベント発火
         window.dispatchEvent(new Event("storage"));
 
-        // クリーンアップ関数でイベントリスナーを削除
         return () => {
             window.removeEventListener('storage', handleStorageChange);
         };
@@ -241,7 +179,7 @@ export default function PrimarySearchAppBar() {
                                 <NotificationsIcon />
                             </Badge>
                         </IconButton>
-                        <AccountMenu isLoggedIn={isLoggedIn}/>
+                        <AccountMenu isLoggedIn={isLoggedIn} />
                     </Box>
                 </Toolbar>
             </AppBar>

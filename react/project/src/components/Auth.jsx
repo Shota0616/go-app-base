@@ -4,6 +4,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Box, Button, TextField, Typography, Paper, IconButton, InputAdornment } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useUser } from '/src/context/UserContext';
 
 // 認証状態を管理するカスタムフック
 const useAuthState = () => {
@@ -51,6 +52,7 @@ const Auth = ({ open, handleClose }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { user, setUser } = useUser();
     const [showPassword, setShowPassword] = useState(false);
     const [emailError, setEmailError] = useState(false);
     const [passwordError, setPasswordError] = useState(false);
@@ -158,7 +160,8 @@ const Auth = ({ open, handleClose }) => {
             window.dispatchEvent(new Event("storage")); // storageイベントを発火
             setMessage(t('login_successful')); // 成功メッセージを設定
             setMessageType('success'); // 成功メッセージの種類を設定
-
+            setUser(response.data.user); // ユーザー情報をセット
+            navigate('/mypage'); // マイページにリダイレクト
         } catch (error) {
             // エラーレスポンスの処理
 
@@ -403,11 +406,18 @@ const Auth = ({ open, handleClose }) => {
                 <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
                     {t('login')}
                 </Button>
-                <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-                    <Link to="/auth/request-password-reset" style={{ color: '#1976d2', textDecoration: 'none' }}>
-                        {t('forgot_password')}
-                    </Link>
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                    <Typography variant="body2" sx={{ textAlign: 'left' }}>
+                        <Link to="/auth/request-password-reset" style={{ color: '#1976d2', textDecoration: 'none' }}>
+                            {t('forgot_password')}
+                        </Link>
+                    </Typography>
+                    <Typography variant="body2" sx={{ textAlign: 'right' }}>
+                        <Link to="/auth/register" style={{ color: '#1976d2', textDecoration: 'none' }}>
+                            {t('do_you_have_an_account')}
+                        </Link>
+                    </Typography>
+                </Box>
             </Box>
         );
     };

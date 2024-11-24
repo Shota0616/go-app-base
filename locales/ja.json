@@ -71,5 +71,7 @@
     "new_password": "新しいパスワード",
     "email_send_failed": "メール送信に失敗しました",
     "account_not_activated_resend_verification": "アカウントが有効化されていません。認証メールを再送しました。",
-    "account_already_activated": "アカウントは既に有効化されています"
+    "account_already_activated": "アカウントは既に有効化されています",
+    "do_you_have_an_account": "アカウントをお持ちですか？",
+    "confirm_logout": "サインアウトしてもよろしいですか？"
 }

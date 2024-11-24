@@ -50,9 +50,9 @@
     "account_settings": "Account Settings",
     "mypage": "My Page",
     "settings": "Settings",
-    "logout": "Sign-out",
+    "logout": "Sign out",
     "register": "Register",
-    "login": "Sign-in",
+    "login": "Sign in",
     "search": "Search",
     "show_new_mails": "Show new mails",
     "show_new_notifications": "Show new notifications",
@@ -68,5 +68,7 @@
     "send": "Send",
     "email_send_failed": "Failed to send email",
     "account_not_activated_resend_verification": "Account not activated. Verification email resent.",
-    "account_already_activated": "Account already activated"
+    "account_already_activated": "Account already activated",
+    "do_you_have_an_account": "Do you have an account?",
+    "confirm_logout": "Are you sure you want to sign out?"
 }

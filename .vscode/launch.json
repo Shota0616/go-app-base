@@ -15,5 +15,17 @@
             "env": {},
             "args": []
         }
-    ]
+    ],
+    "files.exclude": {
+        "node_modules": true,
+        "dist": true,
+        ".git": true,
+        "mysql/data": true
+    },
+    "search.exclude": {
+        "node_modules": true,
+        "dist": true,
+        ".git": true,
+        "mysql/data": true
+    }
 }

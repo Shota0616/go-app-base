@@ -1,25 +1,16 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { Button } from '@mui/material';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Box, Button, Typography, Paper } from '@mui/material';
 
 const Logout = () => {
     const { t } = useTranslation();
-    const [logoutMessage, setLogoutMessage] = useState(''); // 初期値を空文字に
+    const [logoutMessage, setLogoutMessage] = useState('');
 
     const handleLogout = async () => {
         try {
-            // ローカルストレージにあるtokenというキーのものを削除
             localStorage.removeItem('token');
             localStorage.removeItem('refreshtoken');
-            // storageイベント発火
             window.dispatchEvent(new Event("storage"));
-            // トークンの削除はブラウザ側だけで実施可能なのでapiは使用しないでOK。トークン管理をサーバ側でも実施するときは削除も必要
-            // await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/logout`, {}, {
-            //     headers: {
-            //     'Authorization': token,
-            //     },
-            // });
             setLogoutMessage(t('logout_successful'));
         } catch (error) {
             setLogoutMessage(t('logout_failed'));
@@ -27,16 +18,20 @@ const Logout = () => {
     };
 
     return (
-        <>
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 400, mx: 'auto', mt: 4, bgcolor: 'grey.800', color: 'white', borderRadius: 5, boxShadow: 10 }}>
             {logoutMessage ? (
-                // logoutMessageが空じゃないときはメッセージ表示
-                <p>{logoutMessage}</p>
+                <Typography>{logoutMessage}</Typography>
             ) : (
-                <Button onClick={handleLogout} type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '150px', mx: 'auto', display: 'block', height: 50, borderRadius: 3 }}>
-                    {t('logout')}
-                </Button>
+                <Box component="form" onSubmit={(e) => { e.preventDefault(); handleLogout(); }}>
+                    <Typography variant="p" sx={{ mb: 2 }}>
+                        {t('confirm_logout')}
+                    </Typography>
+                    <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '50%', height: 50, borderRadius: 3 }}>
+                        {t('logout')}
+                    </Button>
+                </Box>
             )}
-        </>
+        </Paper>
     );
 };
 
