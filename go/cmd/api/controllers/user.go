@@ -3,9 +3,9 @@ package controllers
 import (
 	"net/http"
 	"github.com/gin-gonic/gin"
-	"github.com/Shota0616/go-sns/config"
-	"github.com/Shota0616/go-sns/models"
-	"github.com/Shota0616/go-sns/auth"
+	"go-app-base/config"
+	"go-app-base/models"
+	"go-app-base/auth"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"github.com/nicksnyder/go-i18n/v2/i18n"

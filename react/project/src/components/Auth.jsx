@@ -279,24 +279,6 @@ const Auth = ({ open, handleClose }) => {
             <Box component="form" onSubmit={(e) => { e.preventDefault(); handleRegister(username, password, email, setMessage, setMessageType, navigate) }} sx={{ mt: 2 }}>
 
                 <TextField
-                    label={t('username')}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                    error={usernameError}
-                    helperText={usernameError ? `${t('username')}${t('input_required')}` : ''}
-                    InputProps={{
-                        style: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            color: 'white',
-                        },
-                    }}
-                    InputLabelProps={{
-                        style: { color: 'white' },
-                    }}
-                />
-                <TextField
                     label={t('email')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -308,6 +290,14 @@ const Auth = ({ open, handleClose }) => {
                         style: {
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
                             color: 'white',
+                        },
+                        sx: {
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'transparent',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'currentColor',
+                            },
                         },
                     }}
                     InputLabelProps={{
@@ -339,7 +329,16 @@ const Auth = ({ open, handleClose }) => {
                         style: {
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
                             color: 'white',
-                        },                    }}
+                        },
+                        sx: {
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'transparent',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'currentColor',
+                            },
+                        },
+                    }}
                     InputLabelProps={{
                         style: { color: 'white' },
                     }}
@@ -367,6 +366,14 @@ const Auth = ({ open, handleClose }) => {
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
                             color: 'white',
                         },
+                        sx: {
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'transparent',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'currentColor',
+                            },
+                        },
                     }}
                     InputLabelProps={{
                         style: { color: 'white' },
@@ -397,6 +404,14 @@ const Auth = ({ open, handleClose }) => {
                         style: {
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
                             color: 'white',
+                        },
+                        sx: {
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'transparent',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'currentColor',
+                            },
                         },
                     }}
                     InputLabelProps={{
@@ -438,6 +453,14 @@ const Auth = ({ open, handleClose }) => {
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
                             color: 'white',
                         },
+                        sx: {
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'transparent',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'currentColor',
+                            },
+                        },
                     }}
                     InputLabelProps={{
                         style: { color: 'white' },
@@ -472,6 +495,14 @@ const Auth = ({ open, handleClose }) => {
                 style: {
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     color: 'white',
+                },
+                sx: {
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'transparent',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'currentColor',
+                    },
                 },
                 }}
                 InputLabelProps={{
@@ -513,6 +544,14 @@ const Auth = ({ open, handleClose }) => {
                 style: {
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     color: 'white',
+                },
+                sx: {
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'transparent',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'currentColor',
+                    },
                 },
                 }}
                 InputLabelProps={{

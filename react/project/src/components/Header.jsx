@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import reactLogo from '/src/assets/react.svg';
 import { styled, alpha } from '@mui/material/styles';
@@ -29,6 +29,8 @@ import ListItemText from '@mui/material/ListItemText';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '/src/context/UserContext';
+import { FormControl, InputLabel, Select } from '@mui/material';
+import { ThemeContext } from '/src/context/ThemeContext';
 
 
 const Search = styled('div')(({ theme }) => ({
@@ -136,8 +138,10 @@ function AccountMenu({ isLoggedIn }) {
 }
 
 export default function PrimarySearchAppBar() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { toggleTheme, mode } = useContext(ThemeContext);
     const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
+    const [currentLang, setCurrentLang] = useState(i18n.language);
 
     useEffect(() => {
         const handleStorageChange = () => {
@@ -152,9 +156,19 @@ export default function PrimarySearchAppBar() {
         };
     }, [isLoggedIn]);
 
+    useEffect(() => {
+        setCurrentLang(i18n.language);
+    }, [i18n.language]);
+
+    const handleLangChange = (event) => {
+        const newLang = event.target.value;
+        i18n.changeLanguage(newLang);
+        setCurrentLang(newLang);
+    };
+
     return (
         <Box sx={{ flexGrow: 1 }}>
-            <AppBar position="static" sx={{ bgcolor: 'black' }}>
+            <AppBar position="static" sx={{ bgcolor: (theme) => theme.palette.background.paper }}>
                 <Toolbar>
                     <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
                         <img src={reactLogo} alt="React Logo" style={{ height: 40, width: 40 }} />
@@ -169,7 +183,61 @@ export default function PrimarySearchAppBar() {
                         />
                     </Search>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Box sx={{ display: { xs: 'flex', md: 'flex' } }}>
+                    <Box sx={{ display: { xs: 'flex', md: 'flex' }, alignItems: 'center' }}>
+                        <FormControl variant="outlined" size="small" sx={{ m: 1, minWidth: 120 }}>
+                            <InputLabel id="lang-select-label" sx={{ color: 'text.secondary' }}>{t('language')}</InputLabel>
+                            <Select
+                                labelId="lang-select-label"
+                                value={currentLang}
+                                onChange={handleLangChange}
+                                label={t('language')}
+                                sx={{
+                                    color: 'text.primary',
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    },
+                                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                                    },
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'primary.main',
+                                    },
+                                    '& .MuiSelect-icon': {
+                                        color: 'text.secondary',
+                                    },
+                                }}
+                            >
+                                <MenuItem value="en">English</MenuItem>
+                                <MenuItem value="ja">日本語</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl variant="outlined" size="small" sx={{ m: 1, minWidth: 120 }}>
+                            <InputLabel id="theme-select-label" sx={{ color: 'text.secondary' }}>{t('theme')}</InputLabel>
+                            <Select
+                                labelId="theme-select-label"
+                                value={mode}
+                                onChange={toggleTheme}
+                                label={t('theme')}
+                                sx={{
+                                    color: 'text.primary',
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    },
+                                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                                    },
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'primary.main',
+                                    },
+                                    '& .MuiSelect-icon': {
+                                        color: 'text.secondary',
+                                    },
+                                }}
+                            >
+                                <MenuItem value="light">Light</MenuItem>
+                                <MenuItem value="dark">Dark</MenuItem>
+                            </Select>
+                        </FormControl>
                         <IconButton
                             size="large"
                             aria-label={t('show_new_notifications')}

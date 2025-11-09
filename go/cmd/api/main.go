@@ -2,8 +2,8 @@ package main
 
 import (
 	// "github.com/gin-gonic/gin"
-	"github.com/Shota0616/go-sns/config"
-	"github.com/Shota0616/go-sns/routes"
+	"go-app-base/config"
+	"go-app-base/routes"
 	// "log"
 )
 

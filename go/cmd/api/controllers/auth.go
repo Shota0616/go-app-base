@@ -12,9 +12,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	"github.com/Shota0616/go-sns/auth"
-	"github.com/Shota0616/go-sns/config"
-	"github.com/Shota0616/go-sns/models"
+	"go-app-base/auth"
+	"go-app-base/config"
+	"go-app-base/models"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )

@@ -5,7 +5,10 @@ services:
     build:
       context: ./react
     volumes:
+      # ソースコードをマウント
       - ./react/project:/var/www/vite-project
+      # 変更点：node_modules をホストから分離し、コンテナ専用ボリュームを使用
+      - react_node_modules:/var/www/vite-project/node_modules
       - ./locales:/var/www/locales
     environment:
       TZ: ${TZ}
@@ -59,7 +62,7 @@ services:
       - ./react/project/dist:/usr/share/nginx/html
     environment:
       TZ: ${TZ}
-      NODE_ENV: ${ENV_MODE}  # NODE_ENVを追加
+      NODE_ENV: ${ENV_MODE}
     ports:
       - "8000:8000"
     expose:
@@ -85,7 +88,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: ${TZ}
-      NODE_ENV: ${ENV_MODE}  # NODE_ENVを追加
+      NODE_ENV: ${ENV_MODE}
     ports:
       - "3306:3306"
     expose:
@@ -101,7 +104,7 @@ services:
       context: ./redis
     environment:
       TZ: ${TZ}
-      NODE_ENV: ${ENV_MODE}  # NODE_ENVを追加
+      NODE_ENV: ${ENV_MODE}
     ports:
       - "6379:6379"
     expose:
@@ -119,3 +122,7 @@ networks:
       driver: default
       config:
         - subnet: 192.168.111.0/24
+
+# 変更点：react_node_modules のための定義を追加
+volumes:
+  react_node_modules:

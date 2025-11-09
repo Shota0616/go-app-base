@@ -3,15 +3,19 @@ import Footer from '/src/components/Footer';
 import Header from '/src/components/Header';
 import RoutesConfig from '/src/routes/Routes';
 import '/src/i18n';
+import { CustomThemeProvider } from '/src/context/ThemeContext';
+import { UserProvider } from '/src/context/UserContext';
 
 const App = () => {
   return (
-    <>
-      <Header />
-      {/* RoutesConfigを呼び出し（route設定） */}
-      <RoutesConfig />
-      <Footer />
-    </>
+    <UserProvider>
+      <CustomThemeProvider>
+        <Header />
+        {/* RoutesConfigを呼び出し（route設定） */}
+        <RoutesConfig />
+        <Footer />
+      </CustomThemeProvider>
+    </UserProvider>
   );
 };
 

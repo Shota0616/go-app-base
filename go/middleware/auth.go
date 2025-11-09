@@ -3,7 +3,7 @@ package middleware
 import (
     "net/http"
     "github.com/gin-gonic/gin"
-    "github.com/Shota0616/go-sns/auth"
+    "go-app-base/auth"
     "log"
 )
 

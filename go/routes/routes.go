@@ -3,8 +3,8 @@ package routes
 import (
 	"time"
 	"github.com/gin-gonic/gin"
-	"github.com/Shota0616/go-sns/cmd/api/controllers"
-	"github.com/Shota0616/go-sns/middleware" // ミドルウェアのパッケージ
+	"go-app-base/cmd/api/controllers"
+	"go-app-base/middleware" // ミドルウェアのパッケージ
 	"github.com/gin-contrib/cors"
 	"os"
 )
@@ -31,6 +31,8 @@ func SetupRouter() *gin.Engine {
 		public.POST("/request-password-reset", controllers.RequestPasswordReset) // パスワード再設定リクエストのエンドポイントを追加
 		public.POST("/resend-verification-code", controllers.ResendVerificationCode) // メール認証コード再送のエンドポイントを追加
 		public.POST("/reset-password", controllers.ResetPassword) // パスワード再設定のエンドポイントを追加
+		public.GET("/ping", controllers.Ping)
+		public.GET("/db-check", controllers.DBCheck)
 		// サーバ側でトークンを管理するときは以下を追加
 		// public.POST("/logout", controllers.Logout)
 	}
