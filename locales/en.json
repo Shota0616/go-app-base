@@ -70,5 +70,20 @@
     "account_not_activated_resend_verification": "Account not activated. Verification email resent.",
     "account_already_activated": "Account already activated",
     "do_you_have_an_account": "Do you have an account?",
-    "confirm_logout": "Are you sure you want to sign out?"
+    "confirm_logout": "Are you sure you want to sign out?",
+    "remember_me": "Remember me",
+    "signup_link_text": "Don't have an account?",
+    "signin_link_text": "Already have an account?",
+    "back_to_login": "Back to Login",
+    "verification_code_sent_to": "A verification code has been sent to {{email}}.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "english": "English",
+    "japanese": "Japanese",
+    "site_name": "Shota Isoda",
+    "new_password": "New Password"
 }

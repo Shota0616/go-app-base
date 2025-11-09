@@ -10,6 +10,8 @@ const Logout = () => {
         try {
             localStorage.removeItem('token');
             localStorage.removeItem('refreshtoken');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('refreshtoken');
             window.dispatchEvent(new Event("storage"));
             setLogoutMessage(t('logout_successful'));
         } catch (error) {

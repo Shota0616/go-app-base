@@ -12,15 +12,21 @@ const resources = {
     },
 };
 
+const storedLang = localStorage.getItem('language');
+
 i18n
     .use(initReactI18next)
     .init({
         resources,
-        lng: import.meta.env.VITE_APP_LANG || 'en', // .envファイルのAPP_LANGを使用
+        lng: storedLang || import.meta.env.VITE_APP_LANG || 'en', // Use stored language, then .env, then default to 'en'
         fallbackLng: 'en',
         interpolation: {
             escapeValue: false,
         },
     });
+
+i18n.on('languageChanged', (lng) => {
+    localStorage.setItem('language', lng);
+});
 
 export default i18n;

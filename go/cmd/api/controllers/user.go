@@ -8,6 +8,7 @@ import (
 	"go-app-base/auth"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"strings"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
@@ -42,6 +43,47 @@ func GetUser(c *gin.Context) {
 		"active":   user.IsActive,
 	})
 }
+
+func UpdateUsername(c *gin.Context) {
+	var input struct {
+		Username string `json:"username" binding:"required"`
+	}
+
+	// リクエストのJSONをバインドし、バリデーション
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// middlewareからユーザーIDを取得
+	userID, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "UserID not found in context"})
+		return
+	}
+
+	// ユーザーを検索
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// ユーザー名を更新
+	user.Username = input.Username
+	if err := config.DB.Save(&user).Error; err != nil {
+		// 重複エラーのハンドリング
+		if strings.Contains(err.Error(), "for key 'users.uni_users_username'") {
+			c.JSON(http.StatusConflict, gin.H{"error": config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "username_already_registered"})})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update username"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Username updated successfully"})
+}
+
 
 func UpdateUser(c *gin.Context) {
 	var input struct {

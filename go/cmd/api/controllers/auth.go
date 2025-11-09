@@ -17,12 +17,23 @@ import (
 	"go-app-base/models"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"gorm.io/gorm"
 )
+
+// ランダムな文字列を生成するヘルパー関数
+func generateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
 
 // ユーザー登録を処理する関数
 func Register(c *gin.Context) {
 	var input struct {
-		Username string `json:"username"`
 		Password string `json:"password"`
 		Email    string `json:"email"`
 	}
@@ -34,36 +45,52 @@ func Register(c *gin.Context) {
         return
     }
 
-	// パスワードをハッシュ化, hashedPasswordにはハッシュ化されたパスワードが格納される, errにはエラーが格納される
+	// パスワードをハッシュ化
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	// ハッシュ化に失敗した場合jsonでエラーメッセージを返す
 	if err != nil {
 		// 500 Internal Server Error
 		c.JSON(http.StatusInternalServerError, gin.H{"error": config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_encryption_failed"})})
 		return
 	}
 
-	user := models.User{
-		Username: input.Username,
-		Password: string(hashedPassword),
-		Email:    input.Email,
-		IsActive: false,
+	var user models.User
+	var result *gorm.DB
+	maxRetries := 3
+	for i := 0; i < maxRetries; i++ {
+		// ランダムなユーザー名を生成
+		randomUsername := "user-" + generateRandomString(8)
+
+		user = models.User{
+			Username: randomUsername,
+			Password: string(hashedPassword),
+			Email:    input.Email,
+			IsActive: false,
+		}
+
+		// ユーザーをデータベースに保存
+		result = config.DB.Create(&user)
+		if result.Error == nil {
+			break // 成功したらループを抜ける
+		}
+
+		// エラーがユーザー名の重複によるものかチェック
+		if strings.Contains(result.Error.Error(), "for key 'users.uni_users_username'") {
+			// 重複している場合はリトライ
+			continue
+		} else {
+			// その他のエラー
+			break
+		}
 	}
 
-	// ユーザーをデータベースに保存, エラーが発生したらエラーメッセージをjsonで返す
-	if err := config.DB.Create(&user).Error; err != nil {
+	if result.Error != nil {
 		var errorMessage string
-		switch {
-		case strings.Contains(err.Error(), "for key 'users.uni_users_email'"):
+		if strings.Contains(result.Error.Error(), "for key 'users.uni_users_email'") {
 			errorMessage = config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_already_registered"})
-		case strings.Contains(err.Error(), "for key 'users.uni_users_username'"):
-			errorMessage = config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "username_already_registered"})
-		default:
+		} else {
 			errorMessage = config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "user_registration_failed"})
 		}
-		// 409 Conflict
 		c.JSON(http.StatusConflict, gin.H{"error": errorMessage})
-		// c.JSON(http.StatusConflict, gin.H{"error": config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: errorMessage})})
 		return
 	}
 

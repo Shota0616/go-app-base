@@ -8,30 +8,29 @@ import (
 )
 
 func SendEmail(to string, subject string, body string) error {
-	from := os.Getenv("EMAIL_ADDRESS")
+	from := os.Getenv("EMAIL_FROM") // Use a more generic name like EMAIL_FROM
 	password := os.Getenv("EMAIL_PASSWORD")
-
-	// GmailのSMTPサーバー設定
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
 
 	// メールのヘッダーと本文を構築
 	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, to, subject, body)
 
-	// SMTP認証情報
-	auth := smtp.PlainAuth("", from, password, smtpHost)
+	var auth smtp.Auth
+	// If username and password are provided, use PlainAuth
+	if from != "" && password != "" {
+		auth = smtp.PlainAuth("", from, password, smtpHost)
+	}
 
-	log.Println(from)
-	log.Println(password)
-	log.Println(message)
-	log.Println(auth)
-
+	log.Printf("Sending email to %s via %s:%s", to, smtpHost, smtpPort)
 
 	// メール送信
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, []byte(message))
 	if err != nil {
+		log.Printf("Failed to send email: %v", err)
 		return err
 	}
 
+	log.Println("Email sent successfully")
 	return nil
 }
