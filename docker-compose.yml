@@ -5,11 +5,14 @@ services:
     build:
       context: ./react
     volumes:
+      # ソースコードをマウント
       - ./react/project:/var/www/vite-project
+      # 変更点：node_modules をホストから分離し、コンテナ専用ボリュームを使用
+      - react_node_modules:/var/www/vite-project/node_modules
       - ./locales:/var/www/locales
     environment:
       TZ: ${TZ}
-      GO_API_URL: ${GO_API_URL}
+      VITE_APP_API_URL: http://localhost:8080
       NODE_ENV: ${ENV_MODE}
       APP_LANG: ${APP_LANG}
       APP_URL: ${APP_URL}
@@ -32,8 +35,10 @@ services:
       - ./locales:/usr/src/locales
     environment:
       TZ: ${TZ}
-      EMAIL_ADDRESS: ${EMAIL_ADDRESS}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM: "noreply@example.com"
+      EMAIL_PASSWORD: ""
+      SMTP_HOST: "mailpit"
+      SMTP_PORT: "1025"
       APP_URL: ${APP_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET : ${JWT_REFRESH_SECRET}
@@ -47,6 +52,7 @@ services:
     stdin_open: true
     depends_on:
       - mysql
+      - mailpit
     networks:
       go_app_net:
         ipv4_address: 192.168.111.102
@@ -59,7 +65,7 @@ services:
       - ./react/project/dist:/usr/share/nginx/html
     environment:
       TZ: ${TZ}
-      NODE_ENV: ${ENV_MODE}  # NODE_ENVを追加
+      NODE_ENV: ${ENV_MODE}
     ports:
       - "8000:8000"
     expose:
@@ -85,7 +91,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: ${TZ}
-      NODE_ENV: ${ENV_MODE}  # NODE_ENVを追加
+      NODE_ENV: ${ENV_MODE}
     ports:
       - "3306:3306"
     expose:
@@ -101,7 +107,7 @@ services:
       context: ./redis
     environment:
       TZ: ${TZ}
-      NODE_ENV: ${ENV_MODE}  # NODE_ENVを追加
+      NODE_ENV: ${ENV_MODE}
     ports:
       - "6379:6379"
     expose:
@@ -112,6 +118,15 @@ services:
       go_app_net:
         ipv4_address: 192.168.111.105
 
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI port
+    networks:
+      go_app_net:
+        ipv4_address: 192.168.111.106
+
 networks:
   go_app_net:
     driver: bridge
@@ -119,3 +134,7 @@ networks:
       driver: default
       config:
         - subnet: 192.168.111.0/24
+
+# 変更点：react_node_modules のための定義を追加
+volumes:
+  react_node_modules:

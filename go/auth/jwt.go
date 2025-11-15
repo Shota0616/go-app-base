@@ -1,22 +1,25 @@
 package auth
 
 import (
-	"time"
-	"github.com/dgrijalva/jwt-go"
-	"os"
+	"fmt" // Added for fmt.Errorf
 	"log"
+	"os"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt" // Added for password hashing
 )
 
 // JWTの署名に使用する秘密鍵を環境変数から取得
 var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+
 // リフレッシュトークン用の秘密鍵
 var jwtrefreshKey = []byte(os.Getenv("JWT_REFRESH_SECRET"))
 
-
 // JWTのペイロードに含まれるクレーム(情報)を定義
 type Claims struct {
-	ID uint `json:"id"` // ユーザーID
-	jwt.StandardClaims // 標準のクレーム(例: exp、iatなど)
+	ID             uint `json:"id"` // ユーザーID
+	jwt.StandardClaims     // 標準のクレーム(例: exp、iatなど)
 }
 
 // JWTトークンを生成する関数
@@ -37,7 +40,7 @@ func GenerateJWT(id uint) (string, error) {
 }
 
 // JWTトークンを検証する関数
-func ValidateJWT(tokenStr string) (*Claims, error) {
+var ValidateJWT = func(tokenStr string) (*Claims, error) {
 	claims := &Claims{} // 検証結果を格納するためのClaims構造体
 	log.Println(tokenStr)
 	log.Println(claims)
@@ -56,6 +59,25 @@ func ValidateJWT(tokenStr string) (*Claims, error) {
 		return nil, err // トークンが無効な場合はエラーを返す
 	}
 	return claims, nil // 有効な場合はクレームを返す
+}
+
+// Original ValidateJWT function to be assigned to the variable
+func validateJWTFunc(tokenStr string) (*Claims, error) {
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+	return claims, nil
+}
+
+func init() {
+	ValidateJWT = validateJWTFunc
 }
 
 // リフレッシュトークンを生成する関数
@@ -93,4 +115,19 @@ func RefreshJWT(refreshTokenStr string) (string, error) {
 		return GenerateJWT(claims.ID)
 	}
 	return "", nil // 新しいトークンが必要ない場合は空文字を返す
+}
+
+// HashPassword hashes the given password using bcrypt.
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
+}
+
+// CheckPasswordHash compares a plain password with its hashed version.
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }

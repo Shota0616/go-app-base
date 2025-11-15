@@ -3,7 +3,7 @@ package middleware
 import (
     "net/http"
     "github.com/gin-gonic/gin"
-    "github.com/Shota0616/go-sns/auth"
+    "go-app-base/auth"
     "log"
 )
 
@@ -14,7 +14,7 @@ func AuthRequired() gin.HandlerFunc {
 
         // リクエストにトークンが載っていなかったらエラーを返す
         if token == "" {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Token required"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token not provided"})
             c.Abort()
             return
         }

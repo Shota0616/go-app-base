@@ -4,13 +4,15 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"fmt"
-	"github.com/Shota0616/go-sns/models"
+	"go-app-base/models"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var DB *gorm.DB
 
+// ConnectDatabaseは本番・開発・テスト共通のDB接続のみを担当
 func ConnectDatabase() {
-	dsn := "user:password@tcp(mysql:3306)/sns?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "user:password@tcp(mysql:3306)/app?charset=utf8mb4&parseTime=True&loc=Local"
 	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect to database!")
