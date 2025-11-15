@@ -7,6 +7,7 @@ import SignUp from '/src/components/SignUp';
 import Verify from '/src/components/Verify';
 import RequestPasswordReset from '/src/components/RequestPasswordReset';
 import ResetPassword from '/src/components/ResetPassword';
+import Settings from '/src/components/Settings'; // Import Settings component
 
 const RoutesConfig = () => {
     return (
@@ -23,6 +24,9 @@ const RoutesConfig = () => {
             
             {/* マイページ */}
             <Route path="/mypage" element={<MyPage />} />
+
+            {/* 設定画面 */}
+            <Route path="/settings" element={<Settings />} />
 
             <Route path="/" element={<Home />} />
         </Routes>

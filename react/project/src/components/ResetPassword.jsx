@@ -11,7 +11,10 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Alert, Card, CardContent } from '@mui/material';
+import { Alert, Card, CardContent, InputAdornment, IconButton } from '@mui/material'; // Added InputAdornment, IconButton
+import Visibility from '@mui/icons-material/Visibility'; // Added Visibility icon
+import VisibilityOff from '@mui/icons-material/VisibilityOff'; // Added VisibilityOff icon
+import Snackbar from '@mui/material/Snackbar';
 
 export default function ResetPassword() {
   const { t } = useTranslation();
@@ -22,6 +25,13 @@ export default function ResetPassword() {
   const [token, setToken] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('error');
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -39,6 +49,7 @@ export default function ResetPassword() {
     if (!newPassword) {
       setMessage(t('input_required'));
       setMessageType('error');
+      setSnackbarOpen(true);
       return;
     }
 
@@ -46,11 +57,19 @@ export default function ResetPassword() {
       const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/reset-password`, { token, newPassword });
       setMessage(response.data.message);
       setMessageType('success');
+      setSnackbarOpen(true);
       setTimeout(() => navigate('/auth/login'), 2000); // Redirect to login after 2 seconds
     } catch (error) {
       setMessage(error.response?.data?.error || t('password_reset_failed'));
       setMessageType('error');
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    setMessage('');
   };
 
   return (
@@ -75,17 +94,26 @@ export default function ResetPassword() {
                 fullWidth
                 name="newPassword"
                 label={t('new_password')}
-                type="password"
+                type={showPassword ? 'text' : 'password'} // Dynamic type
                 id="newPassword"
                 autoFocus
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                InputProps={{ // Added InputProps
+                    endAdornment: (
+                        <InputAdornment position="end">
+                            <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                            >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                        </InputAdornment>
+                    ),
+                }}
               />
-              {message && (
-                <Alert severity={messageType} sx={{ mt: 2, width: '100%' }}>
-                    {message}
-                </Alert>
-              )}
               <Button
                 type="submit"
                 fullWidth
@@ -106,6 +134,11 @@ export default function ResetPassword() {
           </Box>
         </CardContent>
       </Card>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={messageType} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

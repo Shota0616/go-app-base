@@ -7,6 +7,6 @@ type User struct {
 	ID       uint   `gorm:"primaryKey"`
 	Username string `gorm:"type:varchar(255);unique"`
 	Email    string `gorm:"type:varchar(255);unique"`
-	Password string `gorm:"type:varchar(255)"`
+	Password string `gorm:"type:varchar(255);not null;check:length(password) >= 8"`
 	IsActive bool
 }

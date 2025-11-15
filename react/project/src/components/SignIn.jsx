@@ -14,7 +14,10 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Alert, Card, CardContent } from '@mui/material';
+import { Alert, Card, CardContent, InputAdornment, IconButton } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function SignIn() {
   const { t } = useTranslation();
@@ -22,15 +25,25 @@ export default function SignIn() {
   const { setUser } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false); // Add rememberMe state
+  const [rememberMe, setRememberMe] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('error');
+  const [showAlert, setShowAlert] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
 
   const handleLogin = async (event) => {
     event.preventDefault();
     if (!email || !password) {
         setMessage(t('login_failed'));
         setMessageType('error');
+        setShowAlert(true);
+        setSnackbarOpen(true);
         return;
     }
 
@@ -64,8 +77,17 @@ export default function SignIn() {
         } else {
             setMessage(error.response?.data?.error || t('login_failed'));
             setMessageType('error');
+            setShowAlert(true);
+            setSnackbarOpen(true);
         }
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    setShowAlert(false);
+    setMessage('');
   };
 
   return (
@@ -102,11 +124,25 @@ export default function SignIn() {
                 fullWidth
                 name="password"
                 label={t('password')}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 id="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                    endAdornment: (
+                        <InputAdornment position="end">
+                            <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                            >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                        </InputAdornment>
+                    ),
+                }}
               />
               <FormControlLabel
                 control={
@@ -119,11 +155,6 @@ export default function SignIn() {
                 }
                 label={t('remember_me')}
               />
-              {message && (
-                <Alert severity={messageType} sx={{ mt: 2, width: '100%' }}>
-                    {message}
-                </Alert>
-              )}
               <Button
                 type="submit"
                 fullWidth
@@ -132,21 +163,27 @@ export default function SignIn() {
               >
                 {t('login')}
               </Button>
-              <Grid container>
-                <Grid item xs>
+              <Grid container justifyContent="space-between">
+                <Grid item>
                   <Link component={RouterLink} to="/auth/request-password-reset" variant="body2">
                     {t('forgot_password')}
                   </Link>
                 </Grid>
                 <Grid item>
-                                <Link component={RouterLink} to="/auth/register" variant="body2">
-                                  {t('signup_link_text')}
-                                </Link>                </Grid>
+                  <Link component={RouterLink} to="/auth/register" variant="body2">
+                    {t('signup_link_text')}
+                  </Link>
+                </Grid>
               </Grid>
             </Box>
           </Box>
         </CardContent>
       </Card>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={messageType} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

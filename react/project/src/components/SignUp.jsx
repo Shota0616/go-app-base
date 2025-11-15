@@ -11,7 +11,10 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Alert, Card, CardContent } from '@mui/material';
+import { Alert, Card, CardContent, InputAdornment, IconButton } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function SignUp() {
   const { t } = useTranslation();
@@ -20,26 +23,60 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('error');
+  const [showPassword, setShowPassword] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const validateEmail = (email) => {
+    // シンプルなメールアドレス正規表現
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
 
   const handleRegister = async (event) => {
     event.preventDefault();
     if (!email || !password) {
-        setMessage(t('registration_failed'));
-        setMessageType('error');
-        return;
+      setMessage(t('input_required'));
+      setMessageType('error');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (!validateEmail(email)) {
+      setMessage(t('email_invalid'));
+      setMessageType('error');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (password.length < 8) {
+      setMessage(t('password_min_length', { min: 8 }));
+      setMessageType('error');
+      setSnackbarOpen(true);
+      return;
     }
 
     try {
-        const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/register`, {
-            email,
-            password,
-        });
-        // Pass email to verify page
-        navigate('/auth/verify', { state: { message: response.data.message, messageType: 'success', email: email } });
+      const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/register`, {
+        email,
+        password,
+      });
+      setMessage(response.data.message);
+      setMessageType('success');
+      setSnackbarOpen(true);
+      setTimeout(() => navigate('/auth/verify', { state: { email } }), 1000);
     } catch (error) {
-        setMessage(error.response?.data?.error || t('registration_failed'));
-        setMessageType('error');
+      setMessage(error.response?.data?.error || t('registration_failed'));
+      setMessageType('error');
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    setMessage('');
   };
 
   return (
@@ -77,19 +114,28 @@ export default function SignUp() {
                     fullWidth
                     name="password"
                     label={t('password')}
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     id="password"
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={handleClickShowPassword}
+                            onMouseDown={handleMouseDownPassword}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
               </Grid>
-              {message && (
-                <Alert severity={messageType} sx={{ mt: 2, width: '100%' }}>
-                    {message}
-                </Alert>
-              )}
               <Button
                 type="submit"
                 fullWidth
@@ -100,14 +146,20 @@ export default function SignUp() {
               </Button>
               <Grid container justifyContent="flex-end">
                 <Grid item>
-                                <Link component={RouterLink} to="/auth/login" variant="body2">
-                                  {t('signin_link_text')}
-                                </Link>                </Grid>
+                  <Link component={RouterLink} to="/auth/login" variant="body2">
+                    {t('signin_link_text')}
+                  </Link>
+                </Grid>
               </Grid>
             </Box>
           </Box>
         </CardContent>
       </Card>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={messageType} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

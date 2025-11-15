@@ -14,7 +14,7 @@ func AuthRequired() gin.HandlerFunc {
 
         // リクエストにトークンが載っていなかったらエラーを返す
         if token == "" {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Token required"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token not provided"})
             c.Abort()
             return
         }

@@ -9,21 +9,27 @@ import {
     CircularProgress, 
     TextField, 
     Button, 
-    Alert, 
     Card,
     CardContent,
     Divider,
     IconButton,
     Link,
-    Stack // Import Stack
+    Stack,
+    Snackbar 
 } from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
 import { useUser } from '/src/context/UserContext';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'; // Import Email icon
-import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined'; // Import Person icon
-import getToken from '/src/utils/getToken'; // Import getToken helper
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import getToken from '/src/utils/getToken';
+
+// Custom Alert component for Snackbar
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 
 const MyPage = () => {
@@ -32,9 +38,11 @@ const MyPage = () => {
     const navigate = useNavigate();
     
     const [newUsername, setNewUsername] = useState('');
+    const [newEmail, setNewEmail] = useState('');
     const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState(''); // 'success' or 'error'
-    const [isEditing, setIsEditing] = useState(false);
+    const [messageType, setMessageType] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [isEditingMode, setIsEditingMode] = useState(false); // Global editing mode
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUser = useCallback(async (token) => {
@@ -44,8 +52,8 @@ const MyPage = () => {
             });
             setUser(response.data);
             setNewUsername(response.data.username);
+            setNewEmail(response.data.email);
         } catch (error) {
-            // If token is invalid, clear all tokens and redirect to login
             localStorage.removeItem('token');
             localStorage.removeItem('refreshtoken');
             sessionStorage.removeItem('token');
@@ -58,7 +66,7 @@ const MyPage = () => {
     }, [navigate, setUser]);
 
     useEffect(() => {
-        const token = getToken(); // Use getToken helper
+        const token = getToken();
         if (!token) {
             navigate('/auth/login');
             return;
@@ -67,37 +75,98 @@ const MyPage = () => {
             fetchUser(token);
         } else {
             setNewUsername(user.username);
+            setNewEmail(user.email);
             setIsLoading(false);
         }
     }, [navigate, setUser, user, fetchUser]);
 
-    const handleUpdateUsername = async (e) => {
-        e.preventDefault();
-        const token = getToken(); // Use getToken helper
-        if (!token || newUsername === user.username) {
-            setIsEditing(false);
+    const handleSave = async () => {
+        const token = getToken();
+        if (!token) {
+            navigate('/auth/login');
             return;
         }
 
-        try {
-            const response = await axios.put(
-                `${import.meta.env.VITE_APP_API_URL}/api/user/username`,
-                { username: newUsername },
-                { headers: { 'Authorization': token } }
-            );
-            setMessage(response.data.message);
-            setMessageType('success');
-            setUser({ ...user, username: newUsername });
-            setIsEditing(false);
-        } catch (error) {
-            setMessage(error.response?.data?.error || 'Failed to update username.');
-            setMessageType('error');
+        let usernameUpdated = false;
+        let emailUpdated = false;
+
+        // Update Username
+        if (newUsername !== user.username) {
+            try {
+                const response = await axios.put(
+                    `${import.meta.env.VITE_APP_API_URL}/api/user/username`,
+                    { username: newUsername },
+                    { headers: { 'Authorization': token } }
+                );
+                setMessage(response.data.message);
+                setMessageType('success');
+                setSnackbarOpen(true);
+                setUser({ ...user, username: newUsername });
+                usernameUpdated = true;
+            } catch (error) {
+                setMessage(error.response?.data?.error || t('failed_to_update_username'));
+                setMessageType('error');
+                setSnackbarOpen(true);
+                return; // Stop if username update fails
+            }
+        }
+
+        // Update Email
+        if (newEmail !== user.email) {
+            try {
+                const response = await axios.put(
+                    `${import.meta.env.VITE_APP_API_URL}/api/user/email`,
+                    { newEmail: newEmail },
+                    { headers: { 'Authorization': token } }
+                );
+                setMessage(response.data.message);
+                setMessageType('success');
+                setSnackbarOpen(true);
+                // Email is updated, but user is now inactive, so redirect to verify
+                navigate('/auth/verify', { state: { message: response.data.message, messageType: 'success', email: newEmail } });
+                emailUpdated = true;
+            } catch (error) {
+                setMessage(error.response?.data?.error || t('failed_to_update_email'));
+                setMessageType('error');
+                setSnackbarOpen(true);
+                setNewEmail(user.email); // Revert newEmail to original on failure
+                return; // Stop if email update fails
+            }
+        }
+
+        if (usernameUpdated || emailUpdated) {
+            setIsEditingMode(false); // Exit editing mode if any update was successful
+        } else {
+            setMessage(t('no_changes_to_save'));
+            setMessageType('info');
+            setSnackbarOpen(true);
+            setIsEditingMode(false); // Exit editing mode even if no changes
         }
     };
 
-    const handleCancelEdit = () => {
-        setIsEditing(false);
+    const handleCancel = () => {
         setNewUsername(user.username);
+        setNewEmail(user.email);
+        setIsEditingMode(false);
+        setMessage('');
+        setSnackbarOpen(false);
+    };
+
+    const handleToggleEditMode = () => {
+        setIsEditingMode((prev) => !prev);
+        if (isEditingMode) { // If exiting edit mode, reset values
+            setNewUsername(user.username);
+            setNewEmail(user.email);
+        }
+        setMessage('');
+        setSnackbarOpen(false);
+    };
+
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbarOpen(false);
         setMessage('');
     };
 
@@ -112,64 +181,72 @@ const MyPage = () => {
     return (
         <Container component="main" maxWidth="sm" sx={{ mt: 4 }}>
             <Card elevation={3} sx={{ borderRadius: 2 }}>
-                <CardContent sx={{ p: 4 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <CardContent sx={{ p: 4, alignItems: 'flex-start' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                         <Typography variant="h5" component="h1">
                             {t('mypage_title')}
                         </Typography>
-                        {!isEditing && (
-                            <IconButton onClick={() => setIsEditing(true)} size="small" color="primary">
-                                <EditIcon fontSize="small" />
-                            </IconButton>
-                        )}
+                        <IconButton onClick={handleToggleEditMode} size="small" color="primary">
+                            {isEditingMode ? <CancelIcon /> : <EditIcon />}
+                        </IconButton>
                     </Box>
 
                     <Divider sx={{ my: 2 }} />
 
-                    <Stack spacing={2} sx={{ mb: 2 }}>
+                    <Stack spacing={2} sx={{ mb: 2, alignItems: 'flex-start', width: '100%' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <EmailOutlinedIcon color="action" fontSize="small" />
                             <Typography variant="subtitle2" color="text.secondary">Email</Typography>
                         </Box>
-                        <Typography variant="body1">{user?.email}</Typography>
+                        {isEditingMode ? (
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                sx={{ mb: 1 }}
+                            />
+                        ) : (
+                            <Typography variant="body1" sx={{ textAlign: 'left' }}>{user?.email}</Typography>
+                        )}
                     </Stack>
 
-                    <Stack spacing={2} sx={{ mb: 2 }}>
+                    <Stack spacing={2} sx={{ mb: 2, alignItems: 'flex-start', width: '100%' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <PersonOutlineOutlinedIcon color="action" fontSize="small" />
                             <Typography variant="subtitle2" color="text.secondary">Username</Typography>
                         </Box>
-                        {isEditing ? (
-                            <Box>
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    value={newUsername}
-                                    onChange={(e) => setNewUsername(e.target.value)}
-                                    sx={{ mb: 1 }}
-                                />
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                    <Button onClick={handleCancelEdit} startIcon={<CancelIcon />}>
-                                        {t('cancel')}
-                                    </Button>
-                                    <Button type="submit" variant="contained" color="primary" startIcon={<SaveIcon />}>
-                                        {t('save')}
-                                    </Button>
-                                </Box>
-                            </Box>
+                        {isEditingMode ? (
+                            <TextField
+                                fullWidth
+                            
+                                variant="outlined"
+                                value={newUsername}
+                                onChange={(e) => setNewUsername(e.target.value)}
+                                sx={{ mb: 1 }}
+                            />
                         ) : (
-                            <Typography variant="body1">{user?.username}</Typography>
+                            <Typography variant="body1" sx={{ textAlign: 'left' }}>{user?.username}</Typography>
                         )}
                     </Stack>
+
+                    {isEditingMode && (
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                            <Button onClick={handleCancel} startIcon={<CancelIcon />}>
+                                {t('cancel')}
+                            </Button>
+                            <Button onClick={handleSave} variant="contained" color="primary" startIcon={<SaveIcon />}>
+                                {t('save')}
+                            </Button>
+                        </Box>
+                    )}
                 </CardContent>
-                {message && (
-                    <Box sx={{ px: 4, pb: 2 }}>
-                        <Alert severity={messageType} onClose={() => setMessage('')}>
-                            {message}
-                        </Alert>
-                    </Box>
-                )}
             </Card>
+            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+                <Alert onClose={handleCloseSnackbar} severity={messageType} sx={{ width: '100%' }}>
+                    {message}
+                </Alert>
+            </Snackbar>
         </Container>
     );
 };

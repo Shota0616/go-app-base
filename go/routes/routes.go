@@ -44,6 +44,8 @@ func SetupRouter() *gin.Engine {
 		// protected.GET("/mypage", controllers.GetMyPage) // マイページ
 		protected.GET("/getuser", controllers.GetUser) // ユーザー情報取得
 		protected.PUT("/user/username", controllers.UpdateUsername) // ユーザー名更新
+		protected.PUT("/user/email", controllers.UpdateEmail) // メールアドレス更新
+		protected.PUT("/user/password", controllers.UpdatePassword) // パスワード更新
 		// その他の保護されたルート
 	}
 

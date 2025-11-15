@@ -11,6 +11,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { Alert, Card, CardContent } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
 
 export default function Verify() {
   const { t } = useTranslation();
@@ -21,41 +22,63 @@ export default function Verify() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState(location.state?.message || '');
   const [messageType, setMessageType] = useState(location.state?.messageType || 'info');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
-    if (location.state?.email) {
+    const params = new URLSearchParams(location.search);
+    const urlEmail = params.get('email');
+    const urlCode = params.get('code');
+
+    if (urlEmail) {
+      setEmail(urlEmail);
+    } else if (location.state?.email) {
       setEmail(location.state.email);
     }
-  }, [location.state]);
+
+    if (urlCode) {
+      setVerificationCode(urlCode);
+    }
+  }, [location.search, location.state]);
 
   const handleVerify = async (event) => {
     event.preventDefault();
-    if (!verificationCode) {
+    if (!email || !verificationCode) {
       setMessage(t('input_required'));
       setMessageType('error');
+      setSnackbarOpen(true);
       return;
     }
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/verify`, { email, verificationCode });
+      const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/verify`, { email, verificationCode }, { headers: { Authorization: '' } }); // Explicitly send no auth header
       setMessage(response.data.message);
       setMessageType('success');
+      setSnackbarOpen(true);
       setTimeout(() => navigate('/auth/login'), 2000);
     } catch (error) {
       setMessage(error.response?.data?.error || t('verification_failed'));
       setMessageType('error');
+      setSnackbarOpen(true);
     }
   };
 
   const handleResend = async () => {
     try {
-        const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/resend-verification-code`, { email });
+        const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/resend-verification-code`, { email }, { headers: { Authorization: '' } }); // Explicitly send no auth header
         setMessage(response.data.message);
         setMessageType('success');
+        setSnackbarOpen(true);
     } catch (error) {
         setMessage(error.response?.data?.error || t('resend_verification_code_failed'));
         setMessageType('error');
+        setSnackbarOpen(true);
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    setMessage('');
   };
 
   return (
@@ -88,11 +111,6 @@ export default function Verify() {
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
               />
-              {message && (
-                <Alert severity={messageType} sx={{ mt: 2, width: '100%' }}>
-                    {message}
-                </Alert>
-              )}
               <Button
                 type="submit"
                 fullWidth
@@ -112,6 +130,11 @@ export default function Verify() {
           </Box>
         </CardContent>
       </Card>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={messageType} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

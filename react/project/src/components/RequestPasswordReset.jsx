@@ -12,18 +12,21 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { Alert, Card, CardContent } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
 
 export default function RequestPasswordReset() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('error');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const handleRequest = async (event) => {
     event.preventDefault();
     if (!email) {
       setMessage(t('input_required'));
       setMessageType('error');
+      setSnackbarOpen(true);
       return;
     }
 
@@ -31,10 +34,18 @@ export default function RequestPasswordReset() {
       const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/api/request-password-reset`, { email });
       setMessage(response.data.message);
       setMessageType('success');
+      setSnackbarOpen(true);
     } catch (error) {
       setMessage(error.response?.data?.error || t('password_reset_request_failed'));
       setMessageType('error');
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    setMessage('');
   };
 
   return (
@@ -65,11 +76,6 @@ export default function RequestPasswordReset() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              {message && (
-                <Alert severity={messageType} sx={{ mt: 2, width: '100%' }}>
-                    {message}
-                </Alert>
-              )}
               <Button
                 type="submit"
                 fullWidth
@@ -89,6 +95,11 @@ export default function RequestPasswordReset() {
           </Box>
         </CardContent>
       </Card>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={messageType} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
