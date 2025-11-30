@@ -1,4 +1,4 @@
-.PHONY: test test-coverage test-verbose seed
+.PHONY: test test-coverage test-verbose seed test-integration test-env
 
 # すべてのテストを実行
 test:
@@ -21,6 +21,22 @@ test-auth:
 
 test-middleware:
 	cd go && go test -v ./middleware/...
+
+# 環境設定のテスト
+test-env:
+	cd go && go test -v ./config/...
+
+# 統合テスト（開発環境・本番環境）
+test-integration:
+	cd go && go test -v ./tests/integration/...
+
+# 開発環境テストのみ
+test-dev:
+	cd go && go test -v -run TestDevelopment ./tests/integration/...
+
+# 本番環境テストのみ
+test-prod:
+	cd go && go test -v -run TestProduction ./tests/integration/...
 
 # モックデータを投入
 seed:

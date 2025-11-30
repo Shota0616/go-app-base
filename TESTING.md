@@ -2,9 +2,15 @@
 
 ## 概要
 
-このプロジェクトには、認証、ユーザー管理、ミドルウェア、ヘルスチェックなど、すべての主要機能をカバーする包括的なテストスイートが含まれています。
+このプロジェクトには、認証、ユーザー管理、ミドルウェア、ヘルスチェック、環境設定など、すべての主要機能をカバーする包括的なテストスイートが含まれています。
 
-**テスト統計: 38テスト（100%成功）**
+**テスト統計: 56テスト（100%成功）**
+- 認証・ユーザー管理: 29テスト
+- ミドルウェア: 3テスト
+- 認証ユーティリティ: 6テスト
+- ヘルスチェック: 2テスト
+- 環境設定: 8テスト
+- 統合テスト（開発/本番環境）: 8テスト
 
 ## テストの実行方法
 
@@ -38,6 +44,26 @@ make test-auth
 ミドルウェアのテスト:
 ```bash
 make test-middleware
+```
+
+環境設定のテスト:
+```bash
+make test-env
+```
+
+統合テスト（開発/本番環境）:
+```bash
+make test-integration
+```
+
+開発環境テストのみ:
+```bash
+make test-dev
+```
+
+本番環境テストのみ:
+```bash
+make test-prod
 ```
 
 ### Docker環境内で実行
@@ -136,6 +162,42 @@ go/
 
 - ✅ `TestPing` - Pingエンドポイント
 - ✅ `TestDBCheckSuccess` - データベース接続確認
+
+### 5. 環境設定（8テスト）
+
+- ✅ `TestIsProduction` - 本番環境判定
+- ✅ `TestIsDevelopment` - 開発環境判定
+- ✅ `TestGetEnv` - 環境変数取得
+- ✅ `TestGetEnvInt` - 整数型環境変数取得
+- ✅ `TestGetEnvBool` - 真偽値型環境変数取得
+- ✅ `TestGetEnvDuration` - 期間型環境変数取得
+- ✅ `TestGetLogLevel` - ログレベル取得
+- ✅ `TestGetAllowedOrigins` - CORS許可オリジン取得
+
+### 6. 統合テスト（8テスト）
+
+#### 開発環境テスト（4テスト）
+- ✅ `TestDevelopmentEnvironment` - 開発環境設定確認
+- ✅ `TestDevelopmentCORS` - 開発環境CORS設定
+- ✅ `TestDevelopmentMailpitConfig` - Mailpit設定確認
+- ✅ `TestDevelopmentPingEndpoint` - 開発環境エンドポイント
+
+#### 本番環境テスト（9テスト）
+- ✅ `TestProductionEnvironment` - 本番環境設定確認
+- ✅ `TestProductionGinMode` - Ginリリースモード確認
+- ✅ `TestProductionCORS` - 本番環境CORS設定
+- ✅ `TestProductionSMTPConfig` - 本番SMTP設定確認
+- ✅ `TestProductionSecurityHeaders` - セキュリティヘッダー確認
+- ✅ `TestProductionJWTSecrets` - JWT強度確認
+- ✅ `TestProductionPingEndpoint` - 本番環境エンドポイント
+- ✅ `TestProductionCORSRestriction` - CORS制限確認
+- ✅ `TestProductionLogLevel` - ログレベル確認
+
+#### 環境切り替えテスト（4テスト）
+- ✅ `TestEnvironmentSwitch` - 環境モード切り替え
+- ✅ `TestSMTPConfigByEnvironment` - 環境別SMTP設定
+- ✅ `TestCORSConfigByEnvironment` - 環境別CORS設定
+- ✅ `TestSecurityConfigByEnvironment` - 環境別セキュリティ設定
 
 ## テスト環境の要件
 
