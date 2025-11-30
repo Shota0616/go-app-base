@@ -1,4 +1,4 @@
-.PHONY: test test-coverage test-verbose
+.PHONY: test test-coverage test-verbose seed
 
 # すべてのテストを実行
 test:
@@ -21,3 +21,11 @@ test-auth:
 
 test-middleware:
 	cd go && go test -v ./middleware/...
+
+# モックデータを投入
+seed:
+	cd go && go run cmd/seed/main.go
+
+# Docker環境でモックデータを投入
+seed-docker:
+	docker exec go-app-base-go-1 sh -c "cd /usr/src/app && go run cmd/seed/main.go"

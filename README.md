@@ -1,6 +1,73 @@
 # go-app-base
 
-使用方法
+Go + React + MySQL + Redisを使用したWebアプリケーションのテンプレート
+
+## 特徴
+
+- 🔐 JWT認証（アクセストークン + リフレッシュトークン）
+- 📧 メール認証（開発環境ではMailpit使用）
+- 🔄 環境切り替え（development / production）
+- ✅ 包括的なテストスイート（38テスト、100%成功）
+- 🐳 Docker対応
+- 🌐 多言語対応（日本語/英語）
+
+## クイックスタート
+
+### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/Shota0616/go-app-base.git
+cd go-app-base
+```
+
+### 2. 環境変数の設定
+
+```bash
+cp .env.example .env
+```
+
+`.env`ファイルを編集してJWTシークレットを生成：
+
+```bash
+# JWT_SECRET生成
+openssl rand -base64 32
+
+# JWT_REFRESH_SECRET生成
+openssl rand -base64 32
+```
+
+### 3. コンテナの起動
+
+```bash
+# 開発環境
+docker-compose up -d
+
+# 本番環境
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### 4. アクセス
+
+- アプリケーション: http://localhost:8000
+- Mailpit（開発環境のみ）: http://localhost:8025
+
+## 環境設定
+
+### 開発環境 (development)
+
+- Mailpitを使用（実際のメールは送信されない）
+- 詳細なデバッグログ
+- ホットリロード対応
+
+### 本番環境 (production)
+
+- 実際のSMTPサーバーを使用
+- 最小限のログ出力
+- パフォーマンス最適化
+
+詳細は [DEPLOYMENT.md](DEPLOYMENT.md) を参照してください。
+
+## 使用方法
 
 別途.envファイルをルートディレクトリに作成してください。 
 ```env
@@ -39,6 +106,33 @@ openssl rand -base64 32
 docker-compose up --build
 ```
 url確認 http://localhost:8000
+
+## モックデータ
+
+開発・テスト用のモックデータを投入できます。
+
+### モックデータの投入
+
+```bash
+# ローカル環境で実行
+make seed
+
+# Docker環境で実行
+make seed-docker
+```
+
+### 投入されるユーザーデータ
+
+| ユーザー名 | メールアドレス | パスワード | ステータス |
+|-----------|---------------|-----------|-----------|
+| admin | admin@example.com | password123 | アクティブ |
+| john_doe | john@example.com | password123 | アクティブ |
+| jane_smith | jane@example.com | password123 | アクティブ |
+| bob_wilson | bob@example.com | password123 | アクティブ |
+| alice_brown | alice@example.com | password123 | アクティブ |
+| test_user | test@example.com | password123 | 非アクティブ |
+
+**注意**: モックデータ投入時、既存のユーザーデータは削除されます。
 
 
 ## app
