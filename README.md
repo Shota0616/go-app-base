@@ -7,20 +7,48 @@ Go + React + MySQL + Redisを使用したWebアプリケーションのテンプ
 - 🔐 JWT認証（アクセストークン + リフレッシュトークン）
 - 📧 メール認証（開発環境ではMailpit使用）
 - 🔄 環境切り替え（development / production）
-- ✅ 包括的なテストスイート（38テスト、100%成功）
+- ✅ 包括的なテストスイート（56テスト、100%成功）
 - 🐳 Docker対応
 - 🌐 多言語対応（日本語/英語）
 
-## クイックスタート
+## このテンプレートの使い方
 
-### 1. リポジトリのクローン
+### 方法1: テンプレートとして使用（推奨）
+
+GitHubの「Use this template」機能を使用して、新しいリポジトリを作成します。
+
+1. [このリポジトリ](https://github.com/Shota0616/go-app-base)のページで「Use this template」ボタンをクリック
+2. 新しいリポジトリ名を入力
+3. 「Create repository from template」をクリック
+4. 作成されたリポジトリをクローン
+
+```bash
+git clone https://github.com/YOUR_USERNAME/YOUR_NEW_REPO.git
+cd YOUR_NEW_REPO
+```
+
+### 方法2: フォークして使用
+
+既存のテンプレートを改善したい場合や、元のリポジトリとの同期を保ちたい場合。
+
+1. [このリポジトリ](https://github.com/Shota0616/go-app-base)のページで「Fork」ボタンをクリック
+2. フォークしたリポジトリをクローン
+
+```bash
+git clone https://github.com/YOUR_USERNAME/go-app-base.git
+cd go-app-base
+```
+
+### 方法3: 直接クローン（学習・テスト用）
 
 ```bash
 git clone https://github.com/Shota0616/go-app-base.git
 cd go-app-base
 ```
 
-### 2. 環境変数の設定
+## クイックスタート
+
+### 1. 環境変数の設定
 
 ```bash
 cp .env.example .env
@@ -36,7 +64,9 @@ openssl rand -base64 32
 openssl rand -base64 32
 ```
 
-### 3. コンテナの起動
+生成された値を`.env`ファイルの`JWT_SECRET`と`JWT_REFRESH_SECRET`に設定してください。
+
+### 2. コンテナの起動
 
 ```bash
 # 開発環境
@@ -44,6 +74,12 @@ docker-compose up -d
 
 # 本番環境
 docker-compose -f docker-compose.prod.yml up -d
+```
+
+### 3. モックデータの投入（オプション）
+
+```bash
+make seed-docker
 ```
 
 ### 4. アクセス
@@ -250,7 +286,7 @@ docker exec go-app-base-go-1 sh -c "cd /usr/src/app && go test -v ./..."
 
 ### テストカバレッジ
 
-**合計: 38テスト（100%成功）**
+**合計: 56テスト（100%成功）**
 
 #### 認証・ユーザー管理（29テスト）
 - ユーザー登録（成功、重複メール、無効な入力）
@@ -273,6 +309,17 @@ docker exec go-app-base-go-1 sh -c "cd /usr/src/app && go test -v ./..."
 #### ヘルスチェック（2テスト）
 - Pingエンドポイント
 - データベース接続確認
+
+#### 環境設定（8テスト）
+- 環境判定（開発/本番）
+- 環境変数取得
+- ログレベル設定
+- CORS設定
+
+#### 統合テスト（8テスト）
+- 開発環境テスト
+- 本番環境テスト
+- 環境切り替えテスト
 
 詳細は [TESTING.md](TESTING.md) を参照してください。
 
