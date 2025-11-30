@@ -81,6 +81,13 @@ func UpdateUsername(c *gin.Context) {
 	user.Username = input.Username
 	if err := config.DB.Save(&user).Error; err != nil {
 		log.Printf("Error saving user %v with new username %s: %v", userID, input.Username, err)
+		
+		// Check for duplicate username error (MySQL or SQLite)
+		if strings.Contains(err.Error(), "Duplicate entry") || strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			c.JSON(http.StatusConflict, gin.H{"error": config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "username_already_registered"})})
+			return
+		}
+		
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			if strings.Contains(sqliteErr.Error(), "users.username") {

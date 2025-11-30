@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 	"github.com/gin-gonic/gin"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
@@ -60,8 +62,10 @@ func TestMain(m *testing.M) {
 	os.Setenv("JWT_SECRET", "test_jwt_secret")
 	os.Setenv("APP_URL", "http://localhost:3000")
 	os.Setenv("EMAIL_FROM", "noreply@example.com")
-	os.Setenv("SMTP_HOST", "localhost")
+	os.Setenv("SMTP_HOST", "mailpit")
 	os.Setenv("SMTP_PORT", "1025")
+	os.Setenv("REDIS_HOST", "redis")
+	os.Setenv("REDIS_PORT", "6379")
 	os.Setenv("APP_ROOT", "/usr/src") // Set APP_ROOT for i18n to find locale files
 	os.Setenv("APP_LANG", "en") // Explicitly set language for i18n in tests
 
@@ -152,9 +156,11 @@ func TestRegisterSuccess(t *testing.T) {
 
 func TestRegisterDuplicateEmail(t *testing.T) {
 	config.DB.Exec("DELETE FROM users")
-	createUser("test@example.com", "password123", "testuser", false)
+	ctx := context.Background()
+	config.RDB.Del(ctx, "verification:duplicate@example.com")
+	createUser("duplicate@example.com", "password123", "testuser", true)
 
-	body := gin.H{"email": "test@example.com", "password": "password123"}
+	body := gin.H{"email": "duplicate@example.com", "password": "password123"}
 	c, w := getTestContext(http.MethodPost, "/api/register", body)
 	router.ServeHTTP(w, c.Request)
 
@@ -174,14 +180,18 @@ func TestRegisterInvalidInput(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	var response map[string]string
 	json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "input_data_invalid"}), response["error"])
+	assert.Equal(t, config.Localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_invalid"}), response["error"])
 }
 
 // --- Test Verify Function ---
 func TestVerifySuccess_Registration(t *testing.T) {
 	config.DB.Exec("DELETE FROM users")
+	ctx := context.Background()
 	user := createUser("verify@example.com", "password123", "verifyuser", false)
 	verificationCode := "123456"
+	
+	// Store verification code in Redis
+	config.RDB.Set(ctx, "verification:"+user.Email, verificationCode, 5*time.Minute)
 
 	body := gin.H{"email": user.Email, "verificationCode": verificationCode}
 	c, w := getTestContext(http.MethodPost, "/api/verify", body)
@@ -199,9 +209,19 @@ func TestVerifySuccess_Registration(t *testing.T) {
 
 func TestVerifySuccess_EmailChange(t *testing.T) {
 	config.DB.Exec("DELETE FROM users")
+	ctx := context.Background()
 	user := createUser("old@example.com", "password123", "changeuser", true) // Active user
 	newEmail := "new@example.com"
 	verificationCode := "654321"
+	
+	// Store email change data as JSON with correct structure
+	emailChangeData := map[string]interface{}{
+		"userID": user.ID,
+		"oldEmail": user.Email,
+		"code": verificationCode,
+	}
+	emailChangeJSON, _ := json.Marshal(emailChangeData)
+	config.RDB.Set(ctx, "email_change_data:"+newEmail, string(emailChangeJSON), 5*time.Minute)
 
 	body := gin.H{"email": newEmail, "verificationCode": verificationCode}
 	c, w := getTestContext(http.MethodPost, "/api/verify", body)
@@ -258,7 +278,10 @@ func TestVerifyExpiredCode(t *testing.T) {
 // --- Test ResendVerificationCode Function ---
 func TestResendVerificationCodeSuccess(t *testing.T) {
 	config.DB.Exec("DELETE FROM users")
+	ctx := context.Background()
 	user := createUser("resend@example.com", "password123", "resenduser", false)
+	config.RDB.Del(ctx, "resend_count_"+user.Email)
+	config.RDB.Del(ctx, user.Email)
 
 	body := gin.H{"email": user.Email}
 	c, w := getTestContext(http.MethodPost, "/api/resend-verification-code", body)
@@ -332,7 +355,9 @@ func TestLoginInactiveAccount(t *testing.T) {
 // --- Test RequestPasswordReset Function ---
 func TestRequestPasswordResetSuccess(t *testing.T) {
 	config.DB.Exec("DELETE FROM users")
+	ctx := context.Background()
 	user := createUser("reset@example.com", "password123", "resetuser", true) // Active user
+	config.RDB.Del(ctx, "resend_count_"+user.Email)
 
 	body := gin.H{"email": user.Email}
 	c, w := getTestContext(http.MethodPost, "/api/request-password-reset", body)
